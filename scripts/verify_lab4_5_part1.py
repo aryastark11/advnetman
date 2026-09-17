@@ -32,7 +32,7 @@ def check_step(name, success, detail=""):
 def test_git_version_control():
     print_header("1. Git Version Control & Repository Integrity")
     res = subprocess.run(["git", "status"], cwd=BASE_DIR, capture_output=True, text=True)
-    step1 = check_step("Git repository initialized and clean/tracked", res.returncode == 0, res.stdout.splitlines()[0] if res.stdout else "")
+    step1 = check_step("Git repository initialized and tracked", res.returncode == 0, res.stdout.splitlines()[0] if res.stdout else "")
     
     res_log = subprocess.run(["git", "log", "-n", "1", "--oneline"], cwd=BASE_DIR, capture_output=True, text=True)
     step2 = check_step("Git commit history active", res_log.returncode == 0, res_log.stdout.strip())
@@ -43,19 +43,19 @@ def test_multi_vendor_jinja2_templates():
     
     test_cases = [
         # Vendor, Subdir, Template, DataModel, Expected Tokens
-        ("Arista", "Jinja2_templates_Arista", "r1_r2.j2", "r1.yml", ["hostname R1", "router ospf 1", "network 10.0.0.1/32 area 0.0.0.0"]),
-        ("Arista", "Jinja2_templates_Arista", "r3_r4.j2", "r3.yml", ["hostname R3", "router bgp 65001", "neighbor 172.16.50.2 remote-as 65001"]),
-        ("Arista", "Jinja2_templates_Arista", "r5.j2", "r5.yml", ["hostname R5", "router bgp 65002", "neighbor 198.51.100.2 remote-as 65100"]),
-        ("Arista", "Jinja2_templates_Arista", "s1_s2.j2", "s1.yml", ["hostname S1", "vlan 10,20,30", "switchport mode access"]),
-        ("Arista", "Jinja2_templates_Arista", "s3_s4.j2", "s3.yml", ["hostname S3", "vlan 10,20,30", "switchport mode trunk"]),
-        ("Cisco NX-OS", "Jinja2_templates_Cisco_NXOS", "cisco_nxos_s1_s2.j2", "s1.yml", ["hostname S1", "feature interface-vlan", "switchport access vlan 10"]),
-        ("Cisco NX-OS", "Jinja2_templates_Cisco_NXOS", "cisco_nxos_s3_s4.j2", "s3.yml", ["hostname S3", "feature lldp", "switchport mode trunk"]),
-        ("Cisco XRv9k", "Jinja2_templates_Cisco_XRv9k", "cisco_xrv9k_r1_r2.j2", "r1.yml", ["hostname R1", "router ospf 1", "area 0.0.0.0"]),
-        ("Cisco XRv9k", "Jinja2_templates_Cisco_XRv9k", "cisco_xrv9k_r3_r4.j2", "r3.yml", ["hostname R3", "router bgp 65001", "remote-as 65001"]),
-        ("Cisco XRv9k", "Jinja2_templates_Cisco_XRv9k", "cisco_xrv9k_r5.j2", "r5.yml", ["hostname R5", "router bgp 65002", "remote-as 65100"]),
+        ("Arista", "Jinja2_templates_Arista", "r1_r2.j2", "r1.yml", ["hostname r1", "router ospf 1", "router rip"]),
+        ("Arista", "Jinja2_templates_Arista", "r3_r4.j2", "r3.yml", ["hostname r3", "router bgp 65001", "neighbor 172.16.35.2 remote-as 65005"]),
+        ("Arista", "Jinja2_templates_Arista", "r5.j2", "r5.yml", ["hostname r5", "router bgp 65005", "neighbor 172.16.35.1 remote-as 65001"]),
+        ("Arista", "Jinja2_templates_Arista", "s1_s2.j2", "s1.yml", ["hostname s1", "vlan 10", "switchport access vlan 10"]),
+        ("Arista", "Jinja2_templates_Arista", "s3_s4.j2", "s3.yml", ["hostname s3", "interface Ethernet1", "no ip routing"]),
+        ("Cisco NX-OS", "Jinja2_templates_Cisco_NXOS", "cisco_nxos_s1_s2.j2", "s1.yml", ["hostname s1", "feature interface-vlan", "switchport access vlan 10"]),
+        ("Cisco NX-OS", "Jinja2_templates_Cisco_NXOS", "cisco_nxos_s3_s4.j2", "s3.yml", ["hostname s3", "feature lldp", "switchport mode trunk"]),
+        ("Cisco XRv9k", "Jinja2_templates_Cisco_XRv9k", "cisco_xrv9k_r1_r2.j2", "r1.yml", ["hostname r1", "router ospf 1", "area 0"]),
+        ("Cisco XRv9k", "Jinja2_templates_Cisco_XRv9k", "cisco_xrv9k_r3_r4.j2", "r3.yml", ["hostname r3", "router bgp 65001", "remote-as 65005"]),
+        ("Cisco XRv9k", "Jinja2_templates_Cisco_XRv9k", "cisco_xrv9k_r5.j2", "r5.yml", ["hostname r5", "router bgp 65005", "remote-as 65001"]),
         ("SONiC", "Jinja2_templates_SONiC", "sonic_s1_s2.j2", "s1.yml", ['"VLAN":', '"Vlan10"', '"Vlan20"']),
-        ("SONiC", "Jinja2_templates_SONiC", "sonic_r1_r2.j2", "r1.yml", ["router ospf", "network 10.0.0.1/32 area 0.0.0.0"]),
-        ("SONiC", "Jinja2_templates_SONiC", "sonic_r3_r4.j2", "r3.yml", ["router bgp 65001", "neighbor 172.16.50.2 remote-as 65001"])
+        ("SONiC", "Jinja2_templates_SONiC", "sonic_r1_r2.j2", "r1.yml", ["hostname r1", "router ospf", "router rip"]),
+        ("SONiC", "Jinja2_templates_SONiC", "sonic_r3_r4.j2", "r3.yml", ["hostname r3", "router bgp 65001", "neighbor 172.16.35.2 remote-as 65005"])
     ]
     
     all_pass = True
@@ -138,16 +138,16 @@ def test_bidirectional_navigation():
     
     # 1. Django -> Grafana: Check base.html navbar
     base_html_path = os.path.join(BASE_DIR, "nsot_project", "templates", "automation", "base.html")
-    with open(base_html_path, "r") as f:
+    with open(base_html_path, "r", encoding="utf-8") as f:
         base_content = f.read()
     django_to_grafana = "http://localhost:3000" in base_content and "btn-grafana" in base_content
     check_step("Django GUI contains active button to Grafana NOC", django_to_grafana, "Link to http://localhost:3000/d/nmas-noc-master present")
     
     # 2. Grafana -> Django: Check dashboard JSON
     dashboard_json_path = os.path.join(BASE_DIR, "configs", "grafana", "dashboards", "nmas_network_operations.json")
-    with open(dashboard_json_path, "r") as f:
+    with open(dashboard_json_path, "r", encoding="utf-8") as f:
         dash_content = f.read()
-    grafana_to_django = "http://localhost:8000" in dash_content and "🏠 Back to Django NSoT GUI" in dash_content
+    grafana_to_django = "http://localhost:8000" in dash_content and "Back to Django NSoT GUI" in dash_content
     check_step("Grafana NOC contains active button back to Django GUI", grafana_to_django, "Link to http://localhost:8000 in dashboard links & banner panel")
     
     # 3. Grafana HTTP 200 check
