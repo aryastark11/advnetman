@@ -1,0 +1,60 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Multi-Vendor Jinja2 Templates - NSoT{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: #ffffff;">
+      <i class="fa-solid fa-layer-group" style="color: var(--accent-purple);"></i> Multi-Vendor Jinja2 Templates
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.88rem;">Hierarchical Jinja2 templates for Arista cEOS, Cisco NX-OS 9000v, Cisco XRv 9000, and SONiC VS.</p>
+  </div>
+
+  <div>
+    <a href="{% url 'render_template' %}" class="btn btn-primary">
+      <i class="fa-solid fa-play"></i> Open Live Template Renderer
+    </a>
+  </div>
+</div>
+
+<!-- Vendor Filter -->
+<div style="display: flex; gap: 8px; margin-bottom: 20px;">
+  <a href="?vendor=" class="btn btn-sm {% if vendor_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All Vendors</a>
+  <a href="?vendor=arista" class="btn btn-sm {% if vendor_filter == 'arista' %}btn-primary{% else %}btn-secondary{% endif %}">Arista cEOS (5)</a>
+  <a href="?vendor=cisco_nxos" class="btn btn-sm {% if vendor_filter == 'cisco_nxos' %}btn-primary{% else %}btn-secondary{% endif %}">Cisco NX-OS 9000v (2)</a>
+  <a href="?vendor=cisco_xrv" class="btn btn-sm {% if vendor_filter == 'cisco_xrv' %}btn-primary{% else %}btn-secondary{% endif %}">Cisco XRv 9000 (3)</a>
+  <a href="?vendor=sonic" class="btn btn-sm {% if vendor_filter == 'sonic' %}btn-primary{% else %}btn-secondary{% endif %}">SONiC VS (3)</a>
+</div>
+
+<!-- Templates Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 20px;">
+  {% for tmpl in templates %}
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <div>
+          <h3 style="font-size: 1.05rem; font-weight: 600; color: #ffffff;">{{ tmpl.name }}</h3>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">{{ tmpl.tier }}</div>
+        </div>
+        <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">{{ tmpl.vendor|upper }}</span>
+      </div>
+
+      <p style="font-size: 0.82rem; color: #cbd5e1; margin-bottom: 14px;">{{ tmpl.description }}</p>
+
+      <pre class="code-box" style="max-height: 180px; font-size: 0.75rem; margin-bottom: 14px;"><code>{{ tmpl.content|truncatechars:350 }}</code></pre>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+      <a href="{% url 'render_template' %}?template={{ tmpl.name }}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-code"></i> Test Render
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">
+    No templates found for selected vendor.
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

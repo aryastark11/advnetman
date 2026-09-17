@@ -1,0 +1,111 @@
+! Arista EOS Jinja2 Template: Distribution Routers (R1-R2)
+! Generated for: {{ hostname }}
+!
+no aaa root
+!
+username admin privilege 15 role network-admin secret sha512 $6$0EpeAr86ZqgoZ07r$xiDp3lefZnL6ZYJ3h1ZfuVyLAbj6C.i9G5nCgmI62QuGlXqSjPPJSur6O77/CkgMHP/p7P1RqKBGk8neu4SMO.
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname {{ hostname }}
+!
+spanning-tree mode mstp
+!
+system l1
+   unsupported speed action error
+   unsupported error-correction action error
+!
+{% if dhcp_server is defined and dhcp_server %}
+dhcp server
+{% for pool in dhcp_server %}
+{% if pool.subnet is defined %}
+   subnet {{ pool.subnet }}
+      range {{ pool.range_start }} {{ pool.range_end }}
+      dns server {{ pool.dns_server }}
+      default-gateway {{ pool.default_gateway }}
+   !
+{% endif %}
+{% if pool.subnet_v6 is defined %}
+   subnet {{ pool.subnet_v6 }}
+      range {{ pool.range_start }} {{ pool.range_end }}
+   !
+{% endif %}
+{% endfor %}
+!
+{% endif %}
+{% for intf in interfaces %}
+interface {{ intf.name }}
+   no switchport
+{% if intf.ip is defined %}
+   ip address {{ intf.ip }}
+{% endif %}
+{% if intf.ipv6 is defined %}
+   ipv6 enable
+   ipv6 address {{ intf.ipv6 }}
+{% endif %}
+{% if intf.ospf_area is defined %}
+   ip ospf area {{ intf.ospf_area }}
+   ipv6 ospf 1 area {{ intf.ospf_area }}
+{% endif %}
+!
+{% endfor %}
+{% for sub in subinterfaces %}
+interface {{ sub.parent }}.{{ sub.sub_id }}
+   encapsulation dot1q vlan {{ sub.vlan_id }}
+{% if sub.ip is defined %}
+   ip address {{ sub.ip }}
+{% endif %}
+{% if sub.dhcp_ipv4 is defined and sub.dhcp_ipv4 %}
+   dhcp server ipv4
+{% endif %}
+{% if sub.dhcp_ipv6 is defined and sub.dhcp_ipv6 %}
+   dhcp server ipv6
+{% endif %}
+{% if sub.ipv6 is defined %}
+   ipv6 enable
+   ipv6 address {{ sub.ipv6 }}
+{% endif %}
+!
+{% endfor %}
+interface Management1
+   ip address {{ mgmt_ip }}
+   ipv6 address {{ mgmt_ipv6 }}
+!
+ip routing
+!
+ipv6 unicast-routing
+!
+router multicast
+   ipv4
+      software-forwarding kernel
+   !
+   ipv6
+      software-forwarding kernel
+!
+{% if ospf is defined and ospf %}
+router ospf {{ ospf.process_id }}
+   router-id {{ ospf.router_id }}
+{% for r in ospf.redistribute %}
+   redistribute {{ r }}
+{% endfor %}
+   max-lsa 12000
+!
+ipv6 router ospf {{ ospf.process_id }}
+   router-id {{ ospf.router_id }}
+   redistribute connected
+!
+{% endif %}
+{% if rip is defined and rip.enabled %}
+router rip
+{% for net in rip.networks %}
+   network {{ net }}
+{% endfor %}
+{% for r in rip.redistribute %}
+   redistribute {{ r }}
+{% endfor %}
+   no shutdown
+!
+{% endif %}
+end

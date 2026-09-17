@@ -1,0 +1,49 @@
+! Arista EOS Jinja2 Template: Access Switches (S1-S2)
+! Generated for: {{ hostname }}
+!
+no aaa root
+!
+username admin privilege 15 role network-admin secret sha512 $6$DsBMK/MANkiZ0KR.$V2DWNZU0O6WAf5pA9sTXtucl77FbyCdTcrKnuMhPBWlCwmX18WbY0nBhFTn4hZi8VpTv.KRk77WTN3NqR2VzU/
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname {{ hostname }}
+!
+spanning-tree mode mstp
+!
+system l1
+   unsupported speed action error
+   unsupported error-correction action error
+!
+{% for v in vlans %}
+vlan {{ v.id }}
+   name {{ v.name }}
+!
+{% endfor %}
+{% for p in ports %}
+interface {{ p.name }}
+   description {{ p.description }}
+{% if p.mode == 'trunk' %}
+   switchport trunk allowed vlan {{ p.allowed_vlans }}
+   switchport mode trunk
+{% elif p.mode == 'access' %}
+   switchport access vlan {{ p.access_vlan }}
+{% endif %}
+!
+{% endfor %}
+interface Management1
+   ip address {{ mgmt_ip }}
+   ipv6 address {{ mgmt_ipv6 }}
+!
+no ip routing
+!
+router multicast
+   ipv4
+      software-forwarding kernel
+   !
+   ipv6
+      software-forwarding kernel
+!
+end

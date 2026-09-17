@@ -1,0 +1,49 @@
+hostname: r4
+vendor: arista
+tier: asbr
+device_type: router
+role: Autonomous System Boundary Router (eBGP AS 65001 <-> 65005, OSPF A0)
+mgmt_ip: 172.20.20.14/24
+mgmt_ipv6: 2001:db8:ffff::b/64
+private_ip: 10.0.0.4
+public_ip: null
+bgp:
+  local_asn: 65001
+  router_id: 10.0.0.4
+  neighbors:
+  - ip: 172.16.45.2
+    remote_as: 65005
+    afi: ipv4
+    description: eBGP to R5
+  - ip: 2001:db8:45::2
+    remote_as: 65005
+    afi: ipv6
+    description: eBGP to R5
+  networks_ipv4:
+  - 10.0.0.0/8
+  networks_ipv6:
+  - 2001:db8::/32
+  redistribute:
+  - connected
+  - ospf
+ospf:
+  process_id: 1
+  router_id: 10.0.0.4
+  default_originate: true
+  redistribute:
+  - bgp
+  - connected
+interfaces:
+- name: Ethernet1
+  cisco_name: GigabitEthernet0/0/0/0
+  sonic_name: Ethernet0
+  ip: 172.16.45.1/30
+  ipv6: 2001:db8:45::1/64
+  description: eBGP Link to R5 (PE AS 65005)
+- name: Ethernet2
+  cisco_name: GigabitEthernet0/0/0/1
+  sonic_name: Ethernet4
+  ip: 10.0.0.4/24
+  ipv6: 2001:db8::4/64
+  ospf_area: 0.0.0.0
+  description: Core Link to S4 (OSPF Area 0)

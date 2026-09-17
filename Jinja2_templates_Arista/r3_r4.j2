@@ -1,0 +1,105 @@
+! Arista EOS Jinja2 Template: ASBR Core Routers (R3-R4)
+! Generated for: {{ hostname }}
+!
+no aaa root
+!
+username admin privilege 15 role network-admin secret sha512 $6$jF9WaU./THpbYlMP$GDdLOuLqfND5Z7q4gfIBfXIR5mucIteYDCkMNpCGTDPUiBwfY.udz5A/ZO9WjbN9SEurJI1M4mJ4LokecC36c1
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname {{ hostname }}
+!
+spanning-tree mode mstp
+!
+system l1
+   unsupported speed action error
+   unsupported error-correction action error
+!
+{% for intf in interfaces %}
+interface {{ intf.name }}
+   no switchport
+{% if intf.ip is defined %}
+   ip address {{ intf.ip }}
+{% endif %}
+{% if intf.ipv6 is defined %}
+   ipv6 enable
+   ipv6 address {{ intf.ipv6 }}
+{% endif %}
+{% if intf.ospf_area is defined %}
+   ip ospf area {{ intf.ospf_area }}
+   ipv6 ospf 1 area {{ intf.ospf_area }}
+{% endif %}
+!
+{% endfor %}
+interface Management1
+   ip address {{ mgmt_ip }}
+   ipv6 address {{ mgmt_ipv6 }}
+!
+ip routing
+!
+ipv6 unicast-routing
+!
+{% if bgp is defined and bgp %}
+router bgp {{ bgp.local_asn }}
+   router-id {{ bgp.router_id }}
+{% for n in bgp.neighbors %}
+   neighbor {{ n.ip }} remote-as {{ n.remote_as }}
+{% endfor %}
+   !
+   address-family ipv4
+{% for n in bgp.neighbors %}
+{% if n.afi == 'ipv4' %}
+      neighbor {{ n.ip }} activate
+{% endif %}
+{% endfor %}
+{% for net in bgp.networks_ipv4 %}
+      network {{ net }}
+{% endfor %}
+{% for r in bgp.redistribute %}
+      redistribute {{ r }}
+{% endfor %}
+   !
+   address-family ipv6
+{% for n in bgp.neighbors %}
+{% if n.afi == 'ipv6' %}
+      neighbor {{ n.ip }} activate
+{% endif %}
+{% endfor %}
+{% for net in bgp.networks_ipv6 %}
+      network {{ net }}
+{% endfor %}
+{% for r in bgp.redistribute %}
+      redistribute {{ r }}
+{% endfor %}
+!
+{% endif %}
+router multicast
+   ipv4
+      software-forwarding kernel
+   !
+   ipv6
+      software-forwarding kernel
+!
+{% if ospf is defined and ospf %}
+router ospf {{ ospf.process_id }}
+   router-id {{ ospf.router_id }}
+{% for r in ospf.redistribute %}
+   redistribute {{ r }}
+{% endfor %}
+   max-lsa 12000
+{% if ospf.default_originate %}
+   default-information originate always
+{% endif %}
+!
+ipv6 router ospf {{ ospf.process_id }}
+   router-id {{ ospf.router_id }}
+   redistribute bgp
+   redistribute connected
+{% if ospf.default_originate %}
+   default-information originate always
+{% endif %}
+!
+{% endif %}
+end

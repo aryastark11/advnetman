@@ -1,0 +1,43 @@
+Device/Host,Interface,VLAN,IPv4 Address/Prefix,IPv4 Category,IPv4 Gateway/Next-Hop,IPv6 Address/Prefix,IPv6 Category,IPv6 Gateway/Next-Hop,Assignment Type,MAC Address,Description/Purpose
+Web Server,eth1,None (L3/WAN),198.51.100.10/24,Public (Simulated Internet),198.51.100.1,2001:db8:100::10/64,Public (Global Unicast),2001:db8:100::1,Static,N/A,Internet Web Server (HTTP Dual-Stack Hello World)
+R5,Ethernet1,None (L3/WAN),198.51.100.1/24,Public (Simulated Internet),Directly Connected,2001:db8:100::1/64,Public (Global Unicast),Directly Connected,Static,N/A,PE Router Gateway for Internet Web Server
+R5,Ethernet2,None (L3/WAN),172.16.35.2/30,Private (RFC 1918),172.16.35.1 (R3),2001:db8:35::2/64,Public (Global Unicast),2001:db8:35::1 (R3),Static,N/A,PE-CE Point-to-Point Uplink to R3 (eBGP AS 65005 <-> 65001)
+R5,Ethernet3,None (L3/WAN),172.16.45.2/30,Private (RFC 1918),172.16.45.1 (R4),2001:db8:45::2/64,Public (Global Unicast),2001:db8:45::1 (R4),Static,N/A,PE-CE Point-to-Point Uplink to R4 (eBGP AS 65005 <-> 65001)
+R5,Management1,MGMT,172.20.20.15/24,Private Management,172.20.20.1,2001:db8:ffff::e/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+R3,Ethernet1,None (L3/WAN),172.16.35.1/30,Private (RFC 1918),172.16.35.2 (R5),2001:db8:35::1/64,Public (Global Unicast),2001:db8:35::2 (R5),Static,N/A,ASBR Core Uplink to R5 (eBGP AS 65001 <-> 65005)
+R3,Ethernet2,None (L3 Core),10.0.0.3/24,Private (RFC 1918),Directly Connected,2001:db8:0::3/64,Public (Global Unicast),Directly Connected,Static,N/A,Core Backbone OSPF Area 0 / OSPFv3 Interface
+R3,Management1,MGMT,172.20.20.13/24,Private Management,172.20.20.1,2001:db8:ffff::a/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+R4,Ethernet1,None (L3/WAN),172.16.45.1/30,Private (RFC 1918),172.16.45.2 (R5),2001:db8:45::1/64,Public (Global Unicast),2001:db8:45::2 (R5),Static,N/A,ASBR Core Uplink to R5 (eBGP AS 65001 <-> 65005)
+R4,Ethernet2,None (L3 Core),10.0.0.4/24,Private (RFC 1918),Directly Connected,2001:db8:0::4/64,Public (Global Unicast),Directly Connected,Static,N/A,Core Backbone OSPF Area 0 / OSPFv3 Interface
+R4,Management1,MGMT,172.20.20.14/24,Private Management,172.20.20.1,2001:db8:ffff::9/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+R1,Ethernet1,None (L3 Core),10.0.0.1/24,Private (RFC 1918),Directly Connected,2001:db8:0::1/64,Public (Global Unicast),Directly Connected,Static,N/A,Core Uplink to OSPF Area 0 / OSPFv3 Backbone
+R1,Ethernet2.10,10,10.10.10.1/24,Private (RFC 1918),Directly Connected,2001:db8:10::1/64,Public (Global Unicast),Directly Connected,Static,N/A,VLAN 10 Primary Default Gateway / RIPv2
+R1,Ethernet2.20,20,10.10.20.1/24,Private (RFC 1918),Directly Connected,2001:db8:20::1/64,Public (Global Unicast),Directly Connected,Static,N/A,VLAN 20 Primary Default Gateway / RIPv2
+R1,Management1,MGMT,172.20.20.11/24,Private Management,172.20.20.1,2001:db8:ffff::5/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+R2,Ethernet1,None (L3 Core),10.0.0.2/24,Private (RFC 1918),Directly Connected,2001:db8:0::2/64,Public (Global Unicast),Directly Connected,Static,N/A,Core Uplink to OSPF Area 0 / OSPFv3 Backbone
+R2,Ethernet2.10,10,10.10.10.2/24,Private (RFC 1918),Directly Connected,2001:db8:10::2/64,Public (Global Unicast),Directly Connected,Static,N/A,VLAN 10 Secondary Gateway & DHCPv4/v6 Server
+R2,Ethernet2.20,20,10.10.20.2/24,Private (RFC 1918),Directly Connected,2001:db8:20::2/64,Public (Global Unicast),Directly Connected,Static,N/A,VLAN 20 Secondary Gateway & DHCPv4/v6 Server
+R2,Ethernet2.30,30,None (IPv6-Only),N/A,N/A,2001:db8:30::2/64,Public (Global Unicast),Directly Connected,Static,N/A,VLAN 30 Primary Default Gateway & DHCPv6 Server
+R2,Management1,MGMT,172.20.20.12/24,Private Management,172.20.20.1,2001:db8:ffff::4/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+NMAS Station,eth1,None (L3 Core),10.0.0.100/24,Private (RFC 1918),10.0.0.3,2001:db8:0::100/64,Public (Global Unicast),2001:db8:0::3,Static,N/A,Network Management & Automation Station (Monitoring/Analysis)
+NMAS Station,eth2,None (P2P Isolated),10.99.99.1/30,Private (RFC 1918),Directly Connected,N/A,N/A,N/A,Static,N/A,Dedicated Point-to-Point Secure Link to Backup Server
+NMAS Station,eth0,MGMT,172.20.20.100/24,Private Management,172.20.20.1,N/A,N/A,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+Backup Server,eth1,None (P2P Isolated),10.99.99.2/30,Private (RFC 1918),10.99.99.1 (NMAS),N/A,N/A,N/A,Static,N/A,Isolated Data Lake Backup Storage (Accessible ONLY by NMAS)
+Backup Server,eth0,MGMT (Disabled/Isolated),172.20.20.101/24,Private Management,N/A,N/A,N/A,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface (Firewalled/Restricted)
+Host H1,eth1,10,10.10.10.101/24,Private (RFC 1918),10.10.10.1,2001:db8:10::101/64,Public (Global Unicast),2001:db8:10::1,Static (DHCP Reserved),aa:c1:ab:00:10:01,VLAN 10 Dual-Stack End Host (connected to S1:eth3)
+Host H1,eth0,MGMT,172.20.20.31/24,Private Management,172.20.20.1,N/A,N/A,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+Host H2,eth1,20,10.10.20.102/24,Private (RFC 1918),10.10.20.1,2001:db8:20::102/64,Public (Global Unicast),2001:db8:20::1,Static (DHCP Reserved),aa:c1:ab:00:20:02,VLAN 20 Dual-Stack End Host (connected to S1:eth4)
+Host H2,eth0,MGMT,172.20.20.32/24,Private Management,172.20.20.1,N/A,N/A,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+Host H3,eth1,10,10.10.10.103/24,Private (RFC 1918),10.10.10.1,2001:db8:10::103/64,Public (Global Unicast),2001:db8:10::1,Static (DHCP Reserved),aa:c1:ab:00:10:03,VLAN 10 Dual-Stack End Host (connected to S2:eth3)
+Host H3,eth0,MGMT,172.20.20.33/24,Private Management,172.20.20.1,N/A,N/A,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+Host H4,eth1,30,None (IPv6-Only),N/A,N/A,2001:db8:30::104/64,Public (Global Unicast),2001:db8:30::2,Static (DHCPv6 Reserved),aa:c1:ab:00:30:04,VLAN 30 Strict IPv6-Only End Host (connected to S2:eth4)
+Host H4,eth0,MGMT,172.20.20.34/24,Private Management,172.20.20.1,N/A,N/A,N/A,Static / Containerlab,N/A,Out-of-Band Management Interface
+Switch S1,Management1,MGMT,172.20.20.21/24,Private Management,172.20.20.1,2001:db8:ffff::7/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,"Access Switch S1 (VLANs 10, 20, 30 Trunks/Access)"
+Switch S2,Management1,MGMT,172.20.20.22/24,Private Management,172.20.20.1,2001:db8:ffff::6/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,"Access Switch S2 (VLANs 10, 20, 30 Trunks/Access)"
+Switch S3,Management1,MGMT,172.20.20.23/24,Private Management,172.20.20.1,2001:db8:ffff::f/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Core Backbone Switch S3 (OSPF Area 0 Bridge)
+Switch S4,Management1,MGMT,172.20.20.24/24,Private Management,172.20.20.1,2001:db8:ffff::3/64,Documentation / MGMT,N/A,Static / Containerlab,N/A,Core Backbone Switch S4 (OSPF Area 0 Bridge)
+DHCPv4 Pool VLAN 10,R2 Eth2.10 Pool,10,10.10.10.100 - 10.10.10.200 (Mask: /24),Private (RFC 1918),10.10.10.1 (DNS: 198.51.100.10),N/A,N/A,N/A,Dynamic DHCPv4 Pool,N/A,Dynamic IPv4 Lease Range for VLAN 10 Clients (101 addresses)
+DHCPv4 Pool VLAN 20,R2 Eth2.20 Pool,20,10.10.20.100 - 10.10.20.200 (Mask: /24),Private (RFC 1918),10.10.20.1 (DNS: 198.51.100.10),N/A,N/A,N/A,Dynamic DHCPv4 Pool,N/A,Dynamic IPv4 Lease Range for VLAN 20 Clients (101 addresses)
+DHCPv6 Pool VLAN 10,R2 Eth2.10 Pool,10,N/A,N/A,N/A,2001:db8:10::100 - 2001:db8:10::200 (Prefix: /64),Public (Global Unicast),2001:db8:10::1,Dynamic DHCPv6 / SLAAC Pool,N/A,Dynamic IPv6 Lease Range for VLAN 10 Clients (101 addresses)
+DHCPv6 Pool VLAN 20,R2 Eth2.20 Pool,20,N/A,N/A,N/A,2001:db8:20::100 - 2001:db8:20::200 (Prefix: /64),Public (Global Unicast),2001:db8:20::1,Dynamic DHCPv6 / SLAAC Pool,N/A,Dynamic IPv6 Lease Range for VLAN 20 Clients (101 addresses)
+DHCPv6 Pool VLAN 30,R2 Eth2.30 Pool,30,None (IPv6-Only),N/A,N/A,2001:db8:30::100 - 2001:db8:30::200 (Prefix: /64),Public (Global Unicast),2001:db8:30::2,Dynamic DHCPv6 / SLAAC Pool,N/A,Dynamic IPv6 Lease Range for VLAN 30 Clients (101 addresses)

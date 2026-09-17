@@ -1,0 +1,57 @@
+! Cisco IOS-XRv 9000 Template: Provider Edge (PE) Router (R5 Equivalent)
+! Hostname: {{ hostname }}
+!
+hostname {{ hostname }}
+!
+{% for intf in interfaces %}
+interface {{ intf.cisco_name }}
+ description {{ intf.description }}
+{% if intf.ip is defined %}
+ ipv4 address {{ intf.ip.split('/')[0] }} 255.255.255.0
+{% endif %}
+{% if intf.ipv6 is defined %}
+ ipv6 address {{ intf.ipv6 }}
+{% endif %}
+ no shutdown
+!
+{% endfor %}
+interface MgmtEth0/RP0/CPU0/0
+ ipv4 address {{ mgmt_ip.split('/')[0] }} 255.255.255.0
+ no shutdown
+!
+route-policy PASS-ALL
+  pass
+end-policy
+!
+{% if bgp is defined and bgp %}
+router bgp {{ bgp.local_asn }}
+ bgp router-id {{ bgp.router_id }}
+ address-family ipv4 unicast
+  network 198.51.100.0/24
+  redistribute connected
+ !
+ address-family ipv6 unicast
+  network 2001:db8:100::/64
+  redistribute connected
+ !
+{% for n in bgp.neighbors %}
+ neighbor {{ n.ip }}
+  remote-as {{ n.remote_as }}
+  description {{ n.description }}
+{% if n.afi == 'ipv4' %}
+  address-family ipv4 unicast
+   default-originate
+   route-policy PASS-ALL in
+   route-policy PASS-ALL out
+  !
+{% elif n.afi == 'ipv6' %}
+  address-family ipv6 unicast
+   default-originate
+   route-policy PASS-ALL in
+   route-policy PASS-ALL out
+  !
+{% endif %}
+ !
+{% endfor %}
+!
+{% endif %}

@@ -1,0 +1,11 @@
+FROM alpine:latest
+RUN apk update && apk add --no-cache \
+    iproute2 \
+    iputils \
+    curl \
+    dhcpcd \
+    tcpdump \
+    bash \
+    bind-tools \
+    iperf3 \
+    python3

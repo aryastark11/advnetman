@@ -1,0 +1,11 @@
+#!/bin/bash
+while ! ip link show dev eth1 >/dev/null 2>&1; do
+  sleep 0.5
+done
+ip link set dev eth1 address aa:c1:ab:00:20:02 up
+sleep 2
+ip addr add 10.10.20.102/24 dev eth1 || true
+ip route replace default via 10.10.20.1 dev eth1
+ip addr add 2001:db8:20::102/64 dev eth1 || true
+ip -6 route replace default via 2001:db8:20::1 dev eth1
+tail -f /dev/null

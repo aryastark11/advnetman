@@ -1,0 +1,27 @@
+#!/bin/bash
+while ! ip link show dev eth1 >/dev/null 2>&1; do
+  sleep 0.5
+done
+
+ip link set dev eth1 up
+ip addr add 10.99.99.2/30 dev eth1 || true
+
+# Enforce security: Only NMAS (10.99.99.1) is permitted to access backup node
+iptables -F
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -i eth1 -s 10.99.99.1 -j ACCEPT
+iptables -A INPUT -i eth0 -s 172.20.20.100 -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -j DROP
+
+mkdir -p /opt/backup/datalake/snmp
+mkdir -p /opt/backup/datalake/traps
+mkdir -p /opt/backup/datalake/syslog
+mkdir -p /opt/backup/datalake/telemetry
+mkdir -p /opt/backup/datalake/netconf
+
+# Start backup receiver and retention manager service
+python3 /backup_receiver.py > /var/log/backup_receiver.log 2>&1 &
+
+echo "Backup Server initialized on 10.99.99.2 (Accessible ONLY by NMAS)"
+tail -f /dev/null

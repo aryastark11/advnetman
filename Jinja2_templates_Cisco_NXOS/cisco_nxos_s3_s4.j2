@@ -1,0 +1,30 @@
+! Cisco NX-OS 9000v Template: Core Switches (S3-S4 Equivalent)
+! Device: {{ hostname }} (Cisco Nexus 9000v Series)
+!
+feature lldp
+feature interface-vlan
+feature lacp
+!
+hostname {{ hostname }}
+!
+cisco-fabric default
+spanning-tree mode rapid-pvst
+!
+vlan 1
+  name Default_Core_Transit
+!
+{% for p in ports %}
+interface {{ p.cisco_name }}
+  description {{ p.description }}
+  switchport
+  switchport mode trunk
+  switchport trunk allowed vlan 1-4094
+  no shutdown
+!
+{% endfor %}
+interface mgmt0
+  description Out-of-band Management
+  vrf member management
+  ip address {{ mgmt_ip.split('/')[0] }} 255.255.255.0
+  no shutdown
+!

@@ -1,0 +1,94 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Live Jinja2 Template Renderer - NSoT{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <h1 style="font-size: 1.6rem; font-weight: 700; color: #ffffff;">
+    <i class="fa-solid fa-code" style="color: var(--accent-cyan);"></i> Live Jinja2 Template Renderer &amp; Validator
+  </h1>
+  <p style="color: var(--text-muted); font-size: 0.88rem;">Select a Jinja2 template and YAML data model to dynamically generate and validate configuration across Arista, Cisco, and SONiC platforms.</p>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Left: Inputs -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fa-solid fa-sliders"></i> Render Controls</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="template_name">Jinja2 Template</label>
+            <select id="template_name" name="template_name" class="form-control">
+              {% for t in templates %}
+                <option value="{{ t.name }}" {% if t.name == selected_template_name %}selected{% endif %}>
+                  [{{ t.vendor|upper }}] {{ t.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="device_id">Autofill from Device</label>
+            <select id="device_id" name="device_id" class="form-control" onchange="this.form.submit();">
+              <option value="">Select device to load YAML...</option>
+              {% for d in devices %}
+                <option value="{{ d.id }}" {% if selected_device_id == d.id %}selected{% endif %}>
+                  {{ d.name|upper }} ({{ d.get_vendor_display }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="yaml_data">YAML Data Model Input</label>
+          <textarea id="yaml_data" name="yaml_data" rows="18" class="form-control" placeholder="hostname: r1&#10;mgmt_ip: 172.20.20.11/24">{{ yaml_input }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; font-weight: 600;">
+          <i class="fa-solid fa-play"></i> Render Configuration Now
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Rendered Output -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-file-lines" style="color: var(--accent-teal);"></i> Generated Configuration Output
+          </div>
+          {% if rendered_output %}
+          <div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('renderedConfig').innerText); alert('Rendered configuration copied!');">
+              <i class="fa-solid fa-copy"></i> Copy Output
+            </button>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if error_msg %}
+          <div class="alert alert-error">
+            <div><i class="fa-solid fa-triangle-exclamation"></i> {{ error_msg }}</div>
+          </div>
+        {% endif %}
+
+        {% if rendered_output %}
+          <pre class="code-box" id="renderedConfig" style="max-height: 540px;"><code>{{ rendered_output }}</code></pre>
+        {% else %}
+          <div style="text-align: center; padding: 100px 20px; color: var(--text-muted);">
+            <i class="fa-solid fa-code" style="font-size: 3rem; color: var(--border-color); margin-bottom: 16px;"></i>
+            <h3 style="color: #ffffff; margin-bottom: 8px;">No Output Generated</h3>
+            <p>Select a template, enter or load a YAML data model, and click "Render Configuration Now".</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

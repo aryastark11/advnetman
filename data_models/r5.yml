@@ -1,0 +1,58 @@
+hostname: r5
+vendor: arista
+tier: pe_router
+device_type: router
+role: Provider Edge Router (AS 65005, Public DMZ Web Server Transit)
+mgmt_ip: 172.20.20.15/24
+mgmt_ipv6: 2001:db8:ffff::e/64
+private_ip: 172.16.35.2
+public_ip: 198.51.100.1
+bgp:
+  local_asn: 65005
+  router_id: 198.51.100.1
+  neighbors:
+  - ip: 172.16.35.1
+    remote_as: 65001
+    default_originate: true
+    afi: ipv4
+    description: eBGP to R3 (ASBR 65001)
+  - ip: 172.16.45.1
+    remote_as: 65001
+    default_originate: true
+    afi: ipv4
+    description: eBGP to R4 (ASBR 65001)
+  - ip: 2001:db8:35::1
+    remote_as: 65001
+    default_originate: true
+    afi: ipv6
+    description: eBGP to R3 (ASBR 65001)
+  - ip: 2001:db8:45::1
+    remote_as: 65001
+    default_originate: true
+    afi: ipv6
+    description: eBGP to R4 (ASBR 65001)
+  networks_ipv4:
+  - 198.51.100.0/24
+  networks_ipv6:
+  - 2001:db8:100::/64
+  redistribute:
+  - connected
+interfaces:
+- name: Ethernet1
+  cisco_name: GigabitEthernet0/0/0/0
+  sonic_name: Ethernet0
+  ip: 198.51.100.1/24
+  ipv6: 2001:db8:100::1/64
+  description: Public DMZ Link to Internet Web Server
+- name: Ethernet2
+  cisco_name: GigabitEthernet0/0/0/1
+  sonic_name: Ethernet4
+  ip: 172.16.35.2/30
+  ipv6: 2001:db8:35::2/64
+  description: eBGP Link to R3 (AS 65001)
+- name: Ethernet3
+  cisco_name: GigabitEthernet0/0/0/2
+  sonic_name: Ethernet8
+  ip: 172.16.45.2/30
+  ipv6: 2001:db8:45::2/64
+  description: eBGP Link to R4 (AS 65001)

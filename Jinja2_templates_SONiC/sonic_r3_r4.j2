@@ -1,0 +1,69 @@
+! SONiC FRR Routing Configuration Template: ASBR Routers (R3-R4 Equivalent)
+! Device: {{ hostname }}
+!
+frr version 8.4
+frr defaults traditional
+hostname {{ hostname }}
+log syslog informational
+service integrated-vtysh-config
+!
+{% for intf in interfaces %}
+interface {{ intf.sonic_name }}
+ description {{ intf.description }}
+{% if intf.ip is defined %}
+ ip address {{ intf.ip }}
+{% endif %}
+{% if intf.ipv6 is defined %}
+ ipv6 address {{ intf.ipv6 }}
+{% endif %}
+!
+{% endfor %}
+{% if bgp is defined and bgp %}
+router bgp {{ bgp.local_asn }}
+ bgp router-id {{ bgp.router_id }}
+ no bgp default ipv4-unicast
+{% for n in bgp.neighbors %}
+ neighbor {{ n.ip }} remote-as {{ n.remote_as }}
+ neighbor {{ n.ip }} description {{ n.description }}
+{% endfor %}
+ !
+ address-family ipv4 unicast
+{% for n in bgp.neighbors %}
+{% if n.afi == 'ipv4' %}
+  neighbor {{ n.ip }} activate
+{% endif %}
+{% endfor %}
+{% for net in bgp.networks_ipv4 %}
+  network {{ net }}
+{% endfor %}
+{% for r in bgp.redistribute %}
+  redistribute {{ r }}
+{% endfor %}
+ exit-address-family
+ !
+ address-family ipv6 unicast
+{% for n in bgp.neighbors %}
+{% if n.afi == 'ipv6' %}
+  neighbor {{ n.ip }} activate
+{% endif %}
+{% endfor %}
+{% for net in bgp.networks_ipv6 %}
+  network {{ net }}
+{% endfor %}
+{% for r in bgp.redistribute %}
+  redistribute {{ r }}
+{% endfor %}
+ exit-address-family
+!
+{% endif %}
+{% if ospf is defined and ospf %}
+router ospf
+ ospf router-id {{ ospf.router_id }}
+ redistribute bgp
+ redistribute connected
+ default-information originate always
+ network 10.0.0.0/24 area 0.0.0.0
+!
+{% endif %}
+line vty
+!

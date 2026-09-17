@@ -1,0 +1,10 @@
+hostname: web-server
+vendor: linux
+device_type: server
+role: Internet Web & DNS Server
+mgmt_ip: 172.20.20.200/24
+private_ip: 198.51.100.10/24
+public_ip: 198.51.100.10
+ipv6: 2001:db8:100::10/64
+default_gateway: 198.51.100.1
+default_gateway_v6: 2001:db8:100::1

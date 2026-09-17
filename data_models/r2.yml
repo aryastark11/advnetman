@@ -1,0 +1,78 @@
+hostname: r2
+vendor: arista
+tier: distribution
+device_type: router
+role: Distribution Router & DHCP Server (VLAN 10/20/30, OSPF A0, DHCPv4/v6)
+mgmt_ip: 172.20.20.12/24
+mgmt_ipv6: 2001:db8:ffff::4/64
+private_ip: 10.0.0.2
+public_ip: null
+dhcp_server:
+- subnet: 10.10.10.0/24
+  range_start: 10.10.10.100
+  range_end: 10.10.10.200
+  default_gateway: 10.10.10.1
+  dns_server: 198.51.100.10
+- subnet: 10.10.20.0/24
+  range_start: 10.10.20.100
+  range_end: 10.10.20.200
+  default_gateway: 10.10.20.1
+  dns_server: 198.51.100.10
+- subnet_v6: 2001:db8:10::/64
+  range_start: 2001:db8:10::100
+  range_end: 2001:db8:10::200
+- subnet_v6: 2001:db8:20::/64
+  range_start: 2001:db8:20::100
+  range_end: 2001:db8:20::200
+- subnet_v6: 2001:db8:30::/64
+  range_start: 2001:db8:30::100
+  range_end: 2001:db8:30::200
+ospf:
+  process_id: 1
+  router_id: 10.0.0.2
+  redistribute:
+  - connected
+  - rip
+rip:
+  enabled: true
+  networks:
+  - 10.10.10.0/24
+  - 10.10.20.0/24
+  redistribute:
+  - ospf
+interfaces:
+- name: Ethernet1
+  cisco_name: GigabitEthernet0/0/0/0
+  sonic_name: Ethernet0
+  ip: 10.0.0.2/24
+  ipv6: 2001:db8::2/64
+  ospf_area: 0.0.0.0
+  description: Core Link to S4 (OSPF Area 0)
+- name: Ethernet2
+  cisco_name: GigabitEthernet0/0/0/1
+  sonic_name: Ethernet4
+  routed: true
+  description: 802.1Q Trunk Link to S2
+subinterfaces:
+- parent: Ethernet2
+  sub_id: 10
+  vlan_id: 10
+  ip: 10.10.10.2/24
+  ipv6: 2001:db8:10::2/64
+  dhcp_ipv4: true
+  dhcp_ipv6: true
+  description: VLAN 10 Sub-interface (DHCPv4/v6 Relay/Server)
+- parent: Ethernet2
+  sub_id: 20
+  vlan_id: 20
+  ip: 10.10.20.2/24
+  ipv6: 2001:db8:20::2/64
+  dhcp_ipv4: true
+  dhcp_ipv6: true
+  description: VLAN 20 Sub-interface (DHCPv4/v6 Relay/Server)
+- parent: Ethernet2
+  sub_id: 30
+  vlan_id: 30
+  ipv6: 2001:db8:30::2/64
+  dhcp_ipv6: true
+  description: VLAN 30 Sub-interface (IPv6-Only DHCP)

@@ -1,0 +1,55 @@
+! Cisco IOS-XRv 9000 Template: Distribution Routers (R1-R2 Equivalent)
+! Hostname: {{ hostname }}
+!
+hostname {{ hostname }}
+!
+{% for intf in interfaces %}
+interface {{ intf.cisco_name }}
+ description {{ intf.description }}
+{% if intf.ip is defined %}
+ ipv4 address {{ intf.ip.split('/')[0] }} 255.255.255.0
+{% endif %}
+{% if intf.ipv6 is defined %}
+ ipv6 address {{ intf.ipv6 }}
+{% endif %}
+ no shutdown
+!
+{% endfor %}
+{% for sub in subinterfaces %}
+interface GigabitEthernet0/0/0/1.{{ sub.sub_id }}
+ description {{ sub.description }}
+ encapsulation dot1q {{ sub.vlan_id }}
+{% if sub.ip is defined %}
+ ipv4 address {{ sub.ip.split('/')[0] }} 255.255.255.0
+{% endif %}
+{% if sub.ipv6 is defined %}
+ ipv6 address {{ sub.ipv6 }}
+{% endif %}
+ no shutdown
+!
+{% endfor %}
+interface MgmtEth0/RP0/CPU0/0
+ ipv4 address {{ mgmt_ip.split('/')[0] }} 255.255.255.0
+ no shutdown
+!
+{% if ospf is defined and ospf %}
+router ospf {{ ospf.process_id }}
+ router-id {{ ospf.router_id }}
+ redistribute connected
+ redistribute rip
+ area 0
+  interface GigabitEthernet0/0/0/0
+  !
+ !
+!
+{% endif %}
+{% if rip is defined and rip.enabled %}
+router rip
+{% for sub in subinterfaces %}
+ interface GigabitEthernet0/0/0/1.{{ sub.sub_id }}
+  broadcast-for-v2
+ !
+{% endfor %}
+ redistribute ospf {{ ospf.process_id }}
+!
+{% endif %}

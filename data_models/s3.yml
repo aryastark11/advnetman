@@ -1,0 +1,26 @@
+hostname: s3
+vendor: arista
+tier: core_switch
+device_type: switch
+role: 'Core Switch (OSPF Area 0 Backbone Bridge: R3, R1, S4, NMAS)'
+mgmt_ip: 172.20.20.23/24
+mgmt_ipv6: 2001:db8:ffff::f/64
+private_ip: 172.20.20.23
+public_ip: null
+ports:
+- name: Ethernet1
+  cisco_name: Ethernet1/1
+  sonic_name: Ethernet0
+  description: Core Link to R3 (ASBR)
+- name: Ethernet2
+  cisco_name: Ethernet1/2
+  sonic_name: Ethernet4
+  description: Core Cross-Link to S4
+- name: Ethernet3
+  cisco_name: Ethernet1/3
+  sonic_name: Ethernet8
+  description: Core Link to R1 (Distribution)
+- name: Ethernet4
+  cisco_name: Ethernet1/4
+  sonic_name: Ethernet12
+  description: Management & Monitoring Link to NMAS

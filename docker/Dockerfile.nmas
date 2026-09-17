@@ -1,0 +1,26 @@
+FROM debian:bookworm-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    snmp \
+    snmpd \
+    snmptrapd \
+    rsync \
+    sqlite3 \
+    cron \
+    curl \
+    tshark \
+    tcpdump \
+    python3 \
+    python3-pip \
+    python3-scapy \
+    python3-requests \
+    python3-yaml \
+    nmap \
+    iputils-ping \
+    traceroute \
+    iproute2 \
+    iperf3 \
+    netcat-traditional \
+    iptables \
+    bash \
+    && rm -rf /var/lib/apt/lists/*

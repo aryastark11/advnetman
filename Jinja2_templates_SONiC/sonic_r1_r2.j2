@@ -1,0 +1,55 @@
+! SONiC FRR Routing Configuration Template: Distribution Routers (R1-R2 Equivalent)
+! Device: {{ hostname }}
+!
+frr version 8.4
+frr defaults traditional
+hostname {{ hostname }}
+log syslog informational
+service integrated-vtysh-config
+!
+{% for intf in interfaces %}
+interface {{ intf.sonic_name }}
+ description {{ intf.description }}
+{% if intf.ip is defined %}
+ ip address {{ intf.ip }}
+{% endif %}
+{% if intf.ipv6 is defined %}
+ ipv6 address {{ intf.ipv6 }}
+{% endif %}
+!
+{% endfor %}
+{% for sub in subinterfaces %}
+interface {{ sub.parent }}.{{ sub.sub_id }}
+ description {{ sub.description }}
+{% if sub.ip is defined %}
+ ip address {{ sub.ip }}
+{% endif %}
+{% if sub.ipv6 is defined %}
+ ipv6 address {{ sub.ipv6 }}
+{% endif %}
+!
+{% endfor %}
+{% if ospf is defined and ospf %}
+router ospf
+ ospf router-id {{ ospf.router_id }}
+{% for r in ospf.redistribute %}
+ redistribute {{ r }}
+{% endfor %}
+ network 10.0.0.0/24 area 0.0.0.0
+!
+router ospf6
+ ospf6 router-id {{ ospf.router_id }}
+ redistribute connected
+ interface {{ interfaces[0].sonic_name }} area 0.0.0.0
+!
+{% endif %}
+{% if rip is defined and rip.enabled %}
+router rip
+{% for net in rip.networks %}
+ network {{ net }}
+{% endfor %}
+ redistribute ospf
+!
+{% endif %}
+line vty
+!

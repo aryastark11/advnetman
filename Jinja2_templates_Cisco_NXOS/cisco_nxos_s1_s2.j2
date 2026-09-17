@@ -1,0 +1,43 @@
+! Cisco NX-OS 9000v Template: Access Switches (S1-S2 Equivalent)
+! Device: {{ hostname }} (Cisco Nexus 9000v Series)
+!
+feature lldp
+feature interface-vlan
+feature lacp
+!
+hostname {{ hostname }}
+!
+cisco-fabric default
+spanning-tree mode rapid-pvst
+!
+{% for v in vlans %}
+vlan {{ v.id }}
+  name {{ v.name }}
+!
+{% endfor %}
+{% for p in ports %}
+interface {{ p.cisco_name }}
+  description {{ p.description }}
+{% if p.mode == 'trunk' %}
+  switchport
+  switchport mode trunk
+  switchport trunk allowed vlan {{ p.allowed_vlans }}
+  no shutdown
+{% elif p.mode == 'access' %}
+  switchport
+  switchport mode access
+  switchport access vlan {{ p.access_vlan }}
+  spanning-tree port type edge
+  no shutdown
+{% endif %}
+!
+{% endfor %}
+interface mgmt0
+  description Out-of-band Management
+  vrf member management
+  ip address {{ mgmt_ip.split('/')[0] }} 255.255.255.0
+  no shutdown
+!
+line console
+line vty
+!

@@ -1,0 +1,136 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Edit {{ device.name|upper }} - NSoT{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'device_detail' device.id %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">
+      <i class="fa-solid fa-arrow-left"></i> Back to {{ device.name|upper }} Details
+    </a>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-top: 4px;">
+      <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit Device: {{ device.name|upper }}
+    </h1>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-id-card"></i> Device Parameters</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="device_type">Device Type</label>
+          <select id="device_type" name="device_type" class="form-control">
+            <option value="router" {% if device.device_type == 'router' %}selected{% endif %}>Router</option>
+            <option value="switch" {% if device.device_type == 'switch' %}selected{% endif %}>Switch</option>
+            <option value="host" {% if device.device_type == 'host' %}selected{% endif %}>Host</option>
+            <option value="nmas" {% if device.device_type == 'nmas' %}selected{% endif %}>NMAS Station</option>
+            <option value="server" {% if device.device_type == 'server' %}selected{% endif %}>Internet Server</option>
+            <option value="backup" {% if device.device_type == 'backup' %}selected{% endif %}>Backup Node</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="vendor">Vendor / OS Platform</label>
+          <select id="vendor" name="vendor" class="form-control">
+            <option value="arista" {% if device.vendor == 'arista' %}selected{% endif %}>Arista cEOS</option>
+            <option value="cisco_nxos" {% if device.vendor == 'cisco_nxos' %}selected{% endif %}>Cisco NX-OS 9000v Series</option>
+            <option value="cisco_xrv" {% if device.vendor == 'cisco_xrv' %}selected{% endif %}>Cisco IOS-XRv 9000 Series</option>
+            <option value="sonic" {% if device.vendor == 'sonic' %}selected{% endif %}>SONiC VS (sonic-vs)</option>
+            <option value="linux" {% if device.vendor == 'linux' %}selected{% endif %}>Linux Host / Server</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="tier">Tier Deployment</label>
+          <select id="tier" name="tier" class="form-control">
+            <option value="distribution" {% if device.tier == 'distribution' %}selected{% endif %}>Tier 1: Distribution Routers (R1-R2)</option>
+            <option value="asbr" {% if device.tier == 'asbr' %}selected{% endif %}>Tier 2: ASBR Core Routers (R3-R4)</option>
+            <option value="pe_router" {% if device.tier == 'pe_router' %}selected{% endif %}>Tier 3: PE WAN Gateway (R5)</option>
+            <option value="access_switch" {% if device.tier == 'access_switch' %}selected{% endif %}>Tier 4: Access Switches (S1-S2)</option>
+            <option value="core_switch" {% if device.tier == 'core_switch' %}selected{% endif %}>Tier 5: Core Backbone Switches (S3-S4)</option>
+            <option value="host" {% if device.tier == 'host' %}selected{% endif %}>End Host (H1-H4)</option>
+            <option value="management" {% if device.tier == 'management' %}selected{% endif %}>Management &amp; Automation</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="role">Role / Description</label>
+          <input type="text" id="role" name="role" value="{{ device.role }}" class="form-control">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="public_ip">Public IP</label>
+          <input type="text" id="public_ip" name="public_ip" value="{{ device.public_ip|default:'' }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="private_ip">Private IP</label>
+          <input type="text" id="private_ip" name="private_ip" value="{{ device.private_ip|default:'' }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="mgmt_ip">Management IP</label>
+          <input type="text" id="mgmt_ip" name="mgmt_ip" value="{{ device.mgmt_ip|default:'' }}" class="form-control">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="routing_protocols">Routing Protocols</label>
+          <input type="text" id="routing_protocols" name="routing_protocols" value="{{ device.routing_protocols }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="bgp_asn">BGP ASN</label>
+          <input type="number" id="bgp_asn" name="bgp_asn" value="{{ device.bgp_asn|default:'' }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="router_id">Router ID</label>
+          <input type="text" id="router_id" name="router_id" value="{{ device.router_id|default:'' }}" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="interface_ips">Interface IPs</label>
+        <textarea id="interface_ips" name="interface_ips" rows="3" class="form-control">{{ device.interface_ips }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="vlans">VLANs</label>
+        <input type="text" id="vlans" name="vlans" value="{{ device.vlans }}" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="template_name">Jinja2 Template</label>
+        <input type="text" id="template_name" name="template_name" value="{{ device.template_name }}" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="custom_config_yaml">YAML Data Model</label>
+        <textarea id="custom_config_yaml" name="custom_config_yaml" rows="6" class="form-control">{{ device.custom_config_yaml }}</textarea>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+      <a href="{% url 'delete_device' device.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete {{ device.name|upper }} from the Source of Truth?');">
+        <i class="fa-solid fa-trash"></i> Delete Device
+      </a>
+
+      <div style="display: flex; gap: 12px;">
+        <a href="{% url 'device_detail' device.id %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

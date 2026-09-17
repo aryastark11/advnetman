@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db-journal
+*.log
+.DS_Store
+*.tmp
+media/uploads/temp/
+*.tar.xz
+cEOS-lab-4.33.10M/
+clab-lab1/

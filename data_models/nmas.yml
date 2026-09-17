@@ -1,0 +1,10 @@
+hostname: nmas
+vendor: linux
+device_type: nmas
+role: Network Management & Automation Station
+mgmt_ip: 172.20.20.100/24
+private_ip: 10.0.0.100/24
+ipv6: 2001:db8:0::100/64
+backup_link_ip: 10.99.99.1/30
+default_gateway: 10.0.0.3
+default_gateway_v6: 2001:db8:0::3

@@ -1,0 +1,11 @@
+FROM frrouting/frr:latest
+RUN apk update && apk add --no-cache \
+    dnsmasq \
+    tcpdump \
+    curl \
+    iputils \
+    iproute2 \
+    procps \
+    iptables \
+    bash \
+    iperf3

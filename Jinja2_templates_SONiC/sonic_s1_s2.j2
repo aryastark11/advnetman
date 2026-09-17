@@ -1,0 +1,47 @@
+{
+  "DEVICE_METADATA": {
+    "localhost": {
+      "hostname": "{{ hostname }}",
+      "hwsku": "Force10-S6000",
+      "platform": "x86_64-kvm_x86_64-r0",
+      "mac": "00:01:02:03:04:05",
+      "type": "ToRRouter"
+    }
+  },
+  "VLAN": {
+{% for v in vlans %}
+    "Vlan{{ v.id }}": {
+      "vlanid": "{{ v.id }}",
+      "description": "{{ v.name }}"
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  },
+  "VLAN_MEMBER": {
+{% set vlan_members = [] %}
+{% for p in ports %}
+{% if p.mode == 'trunk' %}
+{% for vid in p.allowed_vlans.split(',') %}
+{% set _ = vlan_members.append('    "Vlan' ~ vid ~ '|' ~ p.sonic_name ~ '": { "tagging_mode": "tagged" }') %}
+{% endfor %}
+{% elif p.mode == 'access' %}
+{% set _ = vlan_members.append('    "Vlan' ~ p.access_vlan ~ '|' ~ p.sonic_name ~ '": { "tagging_mode": "untagged" }') %}
+{% endif %}
+{% endfor %}
+{{ vlan_members | join(',\n') }}
+  },
+  "PORT": {
+{% for p in ports %}
+    "{{ p.sonic_name }}": {
+      "admin_status": "up",
+      "alias": "{{ p.name }}",
+      "description": "{{ p.description }}",
+      "speed": "10000"
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  },
+  "MGMT_INTERFACE": {
+    "eth0|{{ mgmt_ip }}": {
+      "gwaddr": "172.20.20.1"
+    }
+  }
+}

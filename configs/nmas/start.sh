@@ -1,0 +1,28 @@
+#!/bin/bash
+while ! ip link show dev eth1 >/dev/null 2>&1; do
+  sleep 0.5
+done
+
+ip link set dev eth1 up
+ip addr add 10.0.0.100/24 dev eth1 || true
+ip route replace default via 10.0.0.3 dev eth1
+ip addr add 2001:db8:0::100/64 dev eth1 || true
+ip -6 route replace default via 2001:db8:0::3 dev eth1
+
+# Configure dedicated private interface to Backup Node
+if ip link show dev eth2 >/dev/null 2>&1; then
+  ip link set dev eth2 up
+  ip addr add 10.99.99.1/30 dev eth2 || true
+fi
+
+mkdir -p /opt/nmas/datalake/snmp
+mkdir -p /opt/nmas/datalake/traps
+mkdir -p /opt/nmas/datalake/syslog
+mkdir -p /opt/nmas/datalake/telemetry
+mkdir -p /opt/nmas/datalake/netconf
+
+# Python SQLite collector disabled - using Telegraf & InfluxDB stack
+# python3 /nmas_collector.py > /var/log/nmas_collector.log 2>&1 &
+
+echo "NMAS Monitoring Station Initialized (IP: 10.0.0.100, Telegraf/InfluxDB Active)"
+tail -f /dev/null

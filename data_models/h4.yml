@@ -1,0 +1,11 @@
+hostname: h4
+vendor: linux
+device_type: host
+role: End Host (VLAN 30 IPv6-Only)
+mgmt_ip: 172.20.20.104/24
+private_ip: IPv6-Only
+ipv6: 2001:db8:30::104/64
+default_gateway: null
+default_gateway_v6: 2001:db8:30::2
+vlan_id: 30
+dns: 2001:db8:100::10

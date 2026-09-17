@@ -1,0 +1,151 @@
+name: lab1
+
+mgmt:
+  network: lab1-mgmt
+  ipv4-subnet: 172.20.20.0/24
+  ipv6-subnet: 2001:db8:ffff::/64
+
+topology:
+  nodes:
+    # Arista cEOS Routers
+    r1:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.11
+      startup-config: configs/ceos/r1.cfg
+
+    r2:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.12
+      startup-config: configs/ceos/r2.cfg
+
+    r3:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.13
+      startup-config: configs/ceos/r3.cfg
+
+    r4:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.14
+      startup-config: configs/ceos/r4.cfg
+
+    r5:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.15
+      startup-config: configs/ceos/r5.cfg
+
+    # Arista cEOS Switches
+    s1:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.21
+      startup-config: configs/ceos/s1.cfg
+
+    s2:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.22
+      startup-config: configs/ceos/s2.cfg
+
+    s3:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.23
+      startup-config: configs/ceos/s3.cfg
+
+    s4:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.24
+      startup-config: configs/ceos/s4.cfg
+
+    # End Hosts & Servers
+    h1:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.31
+      binds:
+        - configs/h1/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    h2:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.32
+      binds:
+        - configs/h2/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    h3:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.33
+      binds:
+        - configs/h3/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    h4:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.34
+      binds:
+        - configs/h4/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    web-server:
+      kind: linux
+      image: lab-web:latest
+      mgmt-ipv4: 172.20.20.50
+      binds:
+        - configs/web-server/index.html:/var/www/html/index.html
+        - configs/web-server/server.py:/server.py
+        - configs/web-server/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    nmas:
+      kind: linux
+      image: lab-nmas:latest
+      mgmt-ipv4: 172.20.20.100
+      binds:
+        - configs/nmas/start.sh:/start.sh
+        - configs/nmas/nmas_collector.py:/nmas_collector.py
+      cmd: /bin/bash /start.sh
+
+    backup-server:
+      kind: linux
+      image: lab-nmas:latest
+      mgmt-ipv4: 172.20.20.101
+      binds:
+        - configs/backup-server/start.sh:/start.sh
+        - configs/backup-server/backup_receiver.py:/backup_receiver.py
+      cmd: /bin/bash /start.sh
+
+  links:
+    # Internet Edge
+    - endpoints: ["web-server:eth1", "r5:eth1"]
+    - endpoints: ["r5:eth2", "r3:eth1"]
+    - endpoints: ["r5:eth3", "r4:eth1"]
+
+    # Core (OSPF Area 0)
+    - endpoints: ["r3:eth2", "s3:eth1"]
+    - endpoints: ["r4:eth2", "s4:eth1"]
+    - endpoints: ["s3:eth2", "s4:eth2"]
+    - endpoints: ["s3:eth3", "r1:eth1"]
+    - endpoints: ["s4:eth3", "r2:eth1"]
+    - endpoints: ["s3:eth4", "nmas:eth1"]
+
+    # Access Layer (RIP v2 / VLANs)
+    - endpoints: ["r1:eth2", "s1:eth1"]
+    - endpoints: ["r2:eth2", "s2:eth1"]
+    - endpoints: ["s1:eth2", "s2:eth2"]
+    - endpoints: ["s1:eth3", "h1:eth1"]
+    - endpoints: ["s1:eth4", "h2:eth1"]
+    - endpoints: ["s2:eth3", "h3:eth1"]
+    - endpoints: ["s2:eth4", "h4:eth1"]
+
+    # NMAS Dedicated Private Backup Link (Accessible ONLY by NMAS)
+    - endpoints: ["nmas:eth2", "backup-server:eth1"]

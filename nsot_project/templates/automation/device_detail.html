@@ -1,0 +1,187 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}{{ device.name|upper }} Details - NSoT{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div>
+    <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">
+      <i class="fa-solid fa-arrow-left"></i> Back to Inventory
+    </a>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-top: 4px; display: flex; align-items: center; gap: 12px;">
+      <i class="fa-solid {% if device.device_type == 'router' %}fa-globe{% elif device.device_type == 'switch' %}fa-shuffle{% else %}fa-desktop{% endif %}" style="color: var(--accent-cyan);"></i>
+      {{ device.name|upper }}
+      <span class="badge badge-{{ device.device_type }}">{{ device.get_device_type_display }}</span>
+      <span class="badge badge-online">{{ device.status }}</span>
+    </h1>
+  </div>
+
+  <div style="display: flex; gap: 10px;">
+    <a href="{% url 'pull_device_config' device.id %}" class="btn btn-primary">
+      <i class="fa-solid fa-arrows-rotate"></i> Pull Live Config
+    </a>
+    <form method="post" action="{% url 'save_golden_config' device.id %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-success">
+        <i class="fa-solid fa-bookmark"></i> Save as Golden Config
+      </button>
+    </form>
+    <a href="{% url 'edit_device' device.id %}" class="btn btn-secondary">
+      <i class="fa-solid fa-pen-to-square"></i> Edit
+    </a>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+  <!-- Left Column: Specs & Info -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-circle-info"></i> Device Parameters</div>
+      </div>
+      <table style="font-size: 0.85rem;">
+        <tr>
+          <td style="color: var(--text-muted); width: 40%;">Vendor</td>
+          <td style="font-weight: 600;">{{ device.get_vendor_display }}</td>
+        </tr>
+        <tr>
+          <td style="color: var(--text-muted);">Tier / Hierarchy</td>
+          <td>{{ device.get_tier_display }}</td>
+        </tr>
+        <tr>
+          <td style="color: var(--text-muted);">Role</td>
+          <td>{{ device.role|default:"--" }}</td>
+        </tr>
+        <tr>
+          <td style="color: var(--text-muted);">Management IP</td>
+          <td><code>{{ device.mgmt_ip|default:"--" }}</code></td>
+        </tr>
+        <tr>
+          <td style="color: var(--text-muted);">Private IP</td>
+          <td><code>{{ device.private_ip|default:"--" }}</code></td>
+        </tr>
+        <tr>
+          <td style="color: var(--text-muted);">Public IP</td>
+          <td>
+            {% if device.public_ip %}
+              <code style="color: var(--accent-teal);">{{ device.public_ip }}</code>
+            {% else %}
+              <span style="color: var(--text-muted);">N/A</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% if device.routing_protocols %}
+        <tr>
+          <td style="color: var(--text-muted);">Routing Protocol</td>
+          <td><span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">{{ device.routing_protocols }}</span></td>
+        </tr>
+        {% endif %}
+        {% if device.bgp_asn %}
+        <tr>
+          <td style="color: var(--text-muted);">BGP Local ASN</td>
+          <td><span class="badge" style="background: rgba(6, 182, 212, 0.2); color: #38bdf8;">AS {{ device.bgp_asn }}</span></td>
+        </tr>
+        {% endif %}
+        {% if device.router_id %}
+        <tr>
+          <td style="color: var(--text-muted);">Router ID</td>
+          <td><code>{{ device.router_id }}</code></td>
+        </tr>
+        {% endif %}
+        {% if device.vlans %}
+        <tr>
+          <td style="color: var(--text-muted);">Configured VLANs</td>
+          <td><span class="badge badge-switch">VLAN {{ device.vlans }}</span></td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="color: var(--text-muted);">Assigned J2 Template</td>
+          <td><code>{{ device.template_name|default:"--" }}</code></td>
+        </tr>
+        <tr>
+          <td style="color: var(--text-muted);">Last Config Pull</td>
+          <td style="font-size: 0.78rem; color: #cbd5e1;">
+            {% if device.last_config_pulled_at %}
+              {{ device.last_config_pulled_at|date:"Y-m-d H:i:s" }}
+            {% else %}
+              <span style="color: #eab308;">Not pulled yet</span>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Golden Configs History -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Golden Config Snapshots</div>
+      </div>
+      {% if golden_configs %}
+        <ul style="list-style: none;">
+          {% for gc in golden_configs %}
+          <li style="padding: 10px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.85rem; color: #38bdf8;">{{ gc.version_tag }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ gc.timestamp|date:"Y-m-d H:i:s" }} &bull; {{ gc.change_summary|truncatechars:28 }}</div>
+            </div>
+            <a href="{% url 'golden_configs' %}?id={{ gc.id }}" class="btn btn-secondary btn-sm" title="View Snapshot">
+              <i class="fa-solid fa-eye"></i>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div style="font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 15px 0;">
+          No golden configurations saved yet. Click "Save as Golden Config" to snapshot.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column: Live Running Config & YAML Data Model -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-terminal" style="color: var(--accent-teal);"></i>
+          <span>Live Running Configuration (Source of Truth)</span>
+        </div>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('runningConfigCode').innerText); alert('Configuration copied to clipboard!');">
+            <i class="fa-solid fa-copy"></i> Copy
+          </button>
+        </div>
+      </div>
+
+      {% if device.running_config %}
+        <pre class="code-box" id="runningConfigCode"><code>{{ device.running_config }}</code></pre>
+      {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <i class="fa-solid fa-cloud-arrow-down" style="font-size: 2.5rem; margin-bottom: 12px; color: var(--accent-blue);"></i>
+          <p>No configuration has been loaded yet.</p>
+          <a href="{% url 'pull_device_config' device.id %}" class="btn btn-primary" style="margin-top: 12px;">
+            <i class="fa-solid fa-arrows-rotate"></i> Pull Running Config Now
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if device.custom_config_yaml %}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-file-code" style="color: var(--accent-amber);"></i>
+          <span>YAML Data Model</span>
+        </div>
+        <div>
+          <a href="{% url 'render_template' %}?template={{ device.template_name }}&device={{ device.id }}" class="btn btn-sm btn-primary">
+            <i class="fa-solid fa-play"></i> Render with Jinja2
+          </a>
+        </div>
+      </div>
+      <pre class="code-box" style="max-height: 250px;"><code>{{ device.custom_config_yaml }}</code></pre>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

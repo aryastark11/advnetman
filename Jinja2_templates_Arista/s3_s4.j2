@@ -1,0 +1,38 @@
+! Arista EOS Jinja2 Template: Core Backbone Switches (S3-S4)
+! Generated for: {{ hostname }}
+!
+no aaa root
+!
+username admin privilege 15 role network-admin secret sha512 $6$CXEfjZB6r1hJTpgQ$ys7lfpM0Cz.knyilVCc6AUcE58EeAFLnOGx7EQO8kEsgAvBRVQF/ZeQAE7cjmogGDQluy0opY.fTp7tCY2YM/0
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname {{ hostname }}
+!
+spanning-tree mode mstp
+!
+system l1
+   unsupported speed action error
+   unsupported error-correction action error
+!
+{% for p in ports %}
+interface {{ p.name }}
+   description {{ p.description }}
+!
+{% endfor %}
+interface Management1
+   ip address {{ mgmt_ip }}
+   ipv6 address {{ mgmt_ipv6 }}
+!
+no ip routing
+!
+router multicast
+   ipv4
+      software-forwarding kernel
+   !
+   ipv6
+      software-forwarding kernel
+!
+end

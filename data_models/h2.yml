@@ -1,0 +1,11 @@
+hostname: h2
+vendor: linux
+device_type: host
+role: End Host (VLAN 20)
+mgmt_ip: 172.20.20.102/24
+private_ip: 10.10.20.102/24
+ipv6: 2001:db8:20::102/64
+default_gateway: 10.10.20.1
+default_gateway_v6: 2001:db8:20::1
+vlan_id: 20
+dns: 198.51.100.10

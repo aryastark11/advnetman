@@ -1,0 +1,11 @@
+hostname: h3
+vendor: linux
+device_type: host
+role: End Host (VLAN 10)
+mgmt_ip: 172.20.20.103/24
+private_ip: 10.10.10.103/24
+ipv6: 2001:db8:10::103/64
+default_gateway: 10.10.10.1
+default_gateway_v6: 2001:db8:10::1
+vlan_id: 10
+dns: 198.51.100.10

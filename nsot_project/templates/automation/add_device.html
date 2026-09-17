@@ -1,0 +1,209 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Add New Device - Network Source of Truth{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">
+      <i class="fa-solid fa-arrow-left"></i> Back to Inventory
+    </a>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-top: 4px;">
+      <i class="fa-solid fa-circle-plus" style="color: var(--accent-teal);"></i> Provision New Device into NSoT
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.88rem;">Add network elements (Routers, Switches, Hosts, NMAS) with vendor profile, IPAM parameters, and Jinja2 templates.</p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- 1. General Device Identity -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-id-card"></i> 1. Device Identity &amp; Platform</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="name">Hostname / Device Name *</label>
+          <input type="text" id="name" name="name" required class="form-control" placeholder="e.g. r6, s5, h5, edge-gw-01">
+        </div>
+
+        <div class="form-group">
+          <label for="device_type">Device Type *</label>
+          <select id="device_type" name="device_type" class="form-control" onchange="toggleDeviceFields(this.value);">
+            <option value="router" selected>Router</option>
+            <option value="switch">Switch</option>
+            <option value="host">Host</option>
+            <option value="nmas">NMAS Station</option>
+            <option value="server">Internet Server</option>
+            <option value="backup">Backup Node</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="vendor">Vendor / OS Platform *</label>
+          <select id="vendor" name="vendor" class="form-control">
+            <option value="arista" selected>Arista cEOS (EOS-4.33+)</option>
+            <option value="cisco_nxos">Cisco NX-OS 9000v Series</option>
+            <option value="cisco_xrv">Cisco IOS-XRv 9000 Series</option>
+            <option value="sonic">SONiC VS (sonic-vs)</option>
+            <option value="linux">Linux Host / Container</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="tier">Hierarchy / Tier Deployment *</label>
+          <select id="tier" name="tier" class="form-control">
+            <option value="distribution" selected>Tier 1: Distribution Routers (R1-R2)</option>
+            <option value="asbr">Tier 2: ASBR Core Routers (R3-R4)</option>
+            <option value="pe_router">Tier 3: PE WAN Gateway (R5)</option>
+            <option value="access_switch">Tier 4: Access Switches (S1-S2)</option>
+            <option value="core_switch">Tier 5: Core Backbone Switches (S3-S4)</option>
+            <option value="host">End Host (H1-H4)</option>
+            <option value="management">Management &amp; Automation</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="role">Deployment Role / Description</label>
+        <input type="text" id="role" name="role" class="form-control" placeholder="e.g. Core ASBR router running OSPF Area 0 & eBGP AS 65001">
+      </div>
+    </div>
+
+    <!-- 2. IP Address Management (IPAM) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-network-wired"></i> 2. IP Address Management (IPAM)</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="public_ip">Public / WAN IP</label>
+          <input type="text" id="public_ip" name="public_ip" class="form-control" placeholder="e.g. 198.51.100.1">
+        </div>
+
+        <div class="form-group">
+          <label for="private_ip">Private IP / Subnet</label>
+          <input type="text" id="private_ip" name="private_ip" class="form-control" placeholder="e.g. 10.0.0.6/24">
+        </div>
+
+        <div class="form-group">
+          <label for="mgmt_ip">Management IP / Subnet</label>
+          <input type="text" id="mgmt_ip" name="mgmt_ip" class="form-control" placeholder="e.g. 172.20.20.16/24">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Device-Specific Configuration (Dynamic) -->
+    <div class="card" id="routerFieldsCard">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-route"></i> 3. Router-Specific Routing Protocols &amp; Interfaces</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="routing_protocols">Routing Protocol(s)</label>
+          <input type="text" id="routing_protocols" name="routing_protocols" class="form-control" value="OSPF, BGP" placeholder="e.g. BGP, OSPF, RIPv2, Static">
+        </div>
+
+        <div class="form-group">
+          <label for="bgp_asn">BGP Local ASN</label>
+          <input type="number" id="bgp_asn" name="bgp_asn" class="form-control" placeholder="e.g. 65001">
+        </div>
+
+        <div class="form-group">
+          <label for="router_id">Router ID</label>
+          <input type="text" id="router_id" name="router_id" class="form-control" placeholder="e.g. 10.0.0.6">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="interface_ips">Interface IP Allocations &amp; Descriptions</label>
+        <textarea id="interface_ips" name="interface_ips" rows="3" class="form-control" placeholder="Ethernet1: 10.0.0.6/24 (OSPF A0 link to S3)&#10;Ethernet2: 172.16.55.1/30 (eBGP to Peer)"></textarea>
+      </div>
+    </div>
+
+    <div class="card" id="switchFieldsCard" style="display: none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-shuffle"></i> 3. Switch-Specific VLANs &amp; Ports</div>
+      </div>
+
+      <div class="form-group">
+        <label for="vlans">Configured VLANs</label>
+        <input type="text" id="vlans" name="vlans" class="form-control" placeholder="e.g. 10,20,30">
+      </div>
+    </div>
+
+    <!-- 4. Jinja2 Templates & File Uploads -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-file-code"></i> 4. Jinja2 Templates &amp; Configuration Files</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="template_name">Select Existing Jinja2 Template</label>
+          <select id="template_name" name="template_name" class="form-control">
+            <option value="r1_r2.j2">Arista: Distribution Routers (r1_r2.j2)</option>
+            <option value="r3_r4.j2">Arista: ASBR Core Routers (r3_r4.j2)</option>
+            <option value="r5.j2">Arista: PE WAN Router (r5.j2)</option>
+            <option value="s1_s2.j2">Arista: Access Switches (s1_s2.j2)</option>
+            <option value="s3_s4.j2">Arista: Core Switches (s3_s4.j2)</option>
+            <option value="cisco_nxos_s1_s2.j2">Cisco NX-OS: Access Switch (cisco_nxos_s1_s2.j2)</option>
+            <option value="cisco_nxos_s3_s4.j2">Cisco NX-OS: Core Switch (cisco_nxos_s3_s4.j2)</option>
+            <option value="cisco_xrv9k_r1_r2.j2">Cisco XRv9k: Distribution Router (cisco_xrv9k_r1_r2.j2)</option>
+            <option value="cisco_xrv9k_r3_r4.j2">Cisco XRv9k: ASBR Router (cisco_xrv9k_r3_r4.j2)</option>
+            <option value="cisco_xrv9k_r5.j2">Cisco XRv9k: PE WAN Router (cisco_xrv9k_r5.j2)</option>
+            <option value="sonic_s1_s2.j2">SONiC: Access Switch (sonic_s1_s2.j2)</option>
+            <option value="sonic_r1_r2.j2">SONiC: Distribution Router (sonic_r1_r2.j2)</option>
+            <option value="sonic_r3_r4.j2">SONiC: ASBR Router (sonic_r3_r4.j2)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="uploaded_template_file">Upload Custom Jinja2 Template File (.j2)</label>
+          <input type="file" id="uploaded_template_file" name="uploaded_template_file" class="form-control" accept=".j2,.jinja2,.txt">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="uploaded_config_file">Upload Existing Running Configuration File (.cfg / .txt)</label>
+        <input type="file" id="uploaded_config_file" name="uploaded_config_file" class="form-control" accept=".cfg,.conf,.txt,.json">
+      </div>
+
+      <div class="form-group">
+        <label for="custom_config_yaml">YAML Data Model (Optional)</label>
+        <textarea id="custom_config_yaml" name="custom_config_yaml" rows="5" class="form-control" placeholder="hostname: new-router&#10;mgmt_ip: 172.20.20.16/24&#10;interfaces:&#10;  - name: Ethernet1&#10;    ip: 10.0.0.6/24"></textarea>
+      </div>
+    </div>
+
+    <!-- Submit Buttons -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 40px;">
+      <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-success" style="padding: 10px 24px; font-size: 0.95rem;">
+        <i class="fa-solid fa-plus-circle"></i> Provision Device
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleDeviceFields(devType) {
+  const routerCard = document.getElementById('routerFieldsCard');
+  const switchCard = document.getElementById('switchFieldsCard');
+  
+  if (devType === 'router') {
+    routerCard.style.display = 'block';
+    switchCard.style.display = 'none';
+  } else if (devType === 'switch') {
+    routerCard.style.display = 'none';
+    switchCard.style.display = 'block';
+  } else {
+    routerCard.style.display = 'none';
+    switchCard.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

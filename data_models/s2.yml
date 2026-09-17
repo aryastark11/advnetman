@@ -1,0 +1,41 @@
+hostname: s2
+vendor: arista
+tier: access_switch
+device_type: switch
+role: Access Switch (VLANs 10, 20, 30, Trunk to R2 & S1)
+mgmt_ip: 172.20.20.22/24
+mgmt_ipv6: 2001:db8:ffff::8/64
+private_ip: 172.20.20.22
+public_ip: null
+vlans:
+- id: 10
+  name: VLAN10
+- id: 20
+  name: VLAN20
+- id: 30
+  name: VLAN30
+ports:
+- name: Ethernet1
+  cisco_name: Ethernet1/1
+  sonic_name: Ethernet0
+  mode: trunk
+  allowed_vlans: 10,20,30
+  description: Trunk to R2 (Distribution / DHCP)
+- name: Ethernet2
+  cisco_name: Ethernet1/2
+  sonic_name: Ethernet4
+  mode: trunk
+  allowed_vlans: 10,20,30
+  description: Inter-Switch Trunk to S1
+- name: Ethernet3
+  cisco_name: Ethernet1/3
+  sonic_name: Ethernet8
+  mode: access
+  access_vlan: 10
+  description: Access Port for Host H3 (VLAN 10)
+- name: Ethernet4
+  cisco_name: Ethernet1/4
+  sonic_name: Ethernet12
+  mode: access
+  access_vlan: 30
+  description: Access Port for Host H4 (VLAN 30 IPv6)

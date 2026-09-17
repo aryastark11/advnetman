@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: NMAS Data Lake (InfluxDB)
+    type: influxdb
+    access: proxy
+    url: http://172.20.20.201:8086
+    database: nmas_datalake
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMode: GET
