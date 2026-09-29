@@ -142,7 +142,13 @@
             {% endif %}
           </td>
           <td>
-            <span class="badge badge-online"><i class="fa-solid fa-check-circle" style="font-size: 0.6rem;"></i> {{ dev.status }}</span>
+            {% if "Degraded" in dev.status %}
+              <span class="badge badge-warning" title="One or more physical interfaces are down"><i class="fa-solid fa-triangle-exclamation" style="font-size: 0.6rem;"></i> {{ dev.status }}</span>
+            {% elif dev.status == "Online" %}
+              <span class="badge badge-online"><i class="fa-solid fa-check-circle" style="font-size: 0.6rem;"></i> Online</span>
+            {% else %}
+              <span class="badge badge-offline"><i class="fa-solid fa-circle-xmark" style="font-size: 0.6rem;"></i> {{ dev.status }}</span>
+            {% endif %}
           </td>
           <td>
             <div style="display: flex; gap: 6px;">

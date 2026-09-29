@@ -78,13 +78,55 @@ def pull_live_config_from_node(device):
         except Exception as e:
             return False, f"Render error: {str(e)}"
 
-    else:
-        # Linux Hosts / NMAS / Web Server
-        start_sh_path = os.path.join(BASE_DIR, "configs", name, "start.sh")
-        if os.path.exists(start_sh_path):
-            with open(start_sh_path, "r") as f:
-                return True, f"#!/bin/bash\n# Live Container Startup Configuration for {name}\n\n" + f.read()
-        return True, f"# Host/Server: {name}\n# IP: {device.private_ip}\n# Mgmt: {device.mgmt_ip}\n# Status: Online\n"
+def check_device_live_status(device):
+    """
+    Checks operational health and interface states of device via eAPI.
+    If one or more physical interfaces are down, returns 'Degraded (<interface> Down)'.
+    """
+    name = device.name.lower()
+    mgmt_ip = device.mgmt_ip.split('/')[0] if device.mgmt_ip else ""
+    
+    if device.vendor == 'arista':
+        if not mgmt_ip:
+            return "Offline"
+        url = f"http://{mgmt_ip}/command-api"
+        auth = base64.b64encode(b"admin:admin").decode("utf-8")
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "runCmds",
+            "params": {
+                "version": 1,
+                "cmds": ["enable", "show interfaces status"],
+                "format": "json"
+            },
+            "id": "nsot-intf-status"
+        }
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json", "Authorization": f"Basic {auth}"}
+            )
+            with urllib.request.urlopen(req, timeout=1.8) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                if "result" in res and len(res["result"]) > 1:
+                    statuses = res["result"][1].get("interfaceStatuses", {})
+                    down_intfs = [k for k, v in statuses.items() if k.startswith("Ethernet") and "." not in k and (v.get("linkStatus") != "connected" or v.get("lineProtocolStatus") != "up")]
+                    if down_intfs:
+                        return f"Degraded ({', '.join(down_intfs)} Down)"
+                    return "Online"
+        except Exception:
+            return "Offline"
+        return "Online"
+    elif device.vendor == 'linux':
+        try:
+            res = subprocess.run(["docker", "inspect", f"clab-lab1-{name}", "--format", "{{.State.Running}}"], capture_output=True, text=True, timeout=1.5)
+            if res.stdout.strip() == "true":
+                return "Online"
+            return "Offline"
+        except Exception:
+            return "Online"
+    return "Online"
 
 def dashboard_view(request):
     devices = Device.objects.all()
@@ -118,6 +160,9 @@ def dashboard_view(request):
 
 def device_detail_view(request, device_id):
     device = get_object_or_404(Device, id=device_id)
+    # Refresh live interface status on detail view
+    device.status = check_device_live_status(device)
+    device.save()
     golden_configs = device.golden_configs.all()[:10]
     
     context = {
@@ -133,10 +178,12 @@ def pull_device_config_view(request, device_id):
     if success:
         device.running_config = config_output
         device.last_config_pulled_at = datetime.now()
-        device.status = 'Online'
+        device.status = check_device_live_status(device)
         device.save()
-        messages.success(request, f"Successfully pulled live running configuration from {device.name.upper()}!")
+        messages.success(request, f"Successfully pulled live running configuration from {device.name.upper()}! (Status: {device.status})")
     else:
+        device.status = 'Offline'
+        device.save()
         messages.error(request, f"Could not pull configuration from {device.name}: {config_output}")
 
     return redirect('device_detail', device_id=device.id)
@@ -149,11 +196,14 @@ def pull_all_configs_view(request):
         if success:
             device.running_config = config_output
             device.last_config_pulled_at = datetime.now()
-            device.status = 'Online'
+            device.status = check_device_live_status(device)
             device.save()
             success_count += 1
+        else:
+            device.status = 'Offline'
+            device.save()
 
-    messages.success(request, f"Batch operation complete: Pulled running configs for {success_count}/{devices.count()} devices.")
+    messages.success(request, f"Batch operation complete: Pulled running configs and synchronized live interface health for {success_count}/{devices.count()} devices.")
     return redirect('dashboard')
 
 def save_golden_config_view(request, device_id):

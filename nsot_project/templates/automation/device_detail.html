@@ -12,7 +12,13 @@
       <i class="fa-solid {% if device.device_type == 'router' %}fa-globe{% elif device.device_type == 'switch' %}fa-shuffle{% else %}fa-desktop{% endif %}" style="color: var(--accent-cyan);"></i>
       {{ device.name|upper }}
       <span class="badge badge-{{ device.device_type }}">{{ device.get_device_type_display }}</span>
-      <span class="badge badge-online">{{ device.status }}</span>
+      {% if "Degraded" in device.status %}
+        <span class="badge badge-warning"><i class="fa-solid fa-triangle-exclamation" style="font-size: 0.6rem;"></i> {{ device.status }}</span>
+      {% elif device.status == "Online" %}
+        <span class="badge badge-online"><i class="fa-solid fa-check-circle" style="font-size: 0.6rem;"></i> Online</span>
+      {% else %}
+        <span class="badge badge-offline"><i class="fa-solid fa-circle-xmark" style="font-size: 0.6rem;"></i> {{ device.status }}</span>
+      {% endif %}
     </h1>
   </div>
 
