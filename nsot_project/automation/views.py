@@ -826,8 +826,8 @@ def maintenance_action_api(request):
             'message': 'R1 successfully restored via eAPI. Network restored to normal dual-active state.'
         })
 
-    elif action == 'run_full_cycle':
-        # Execute the complete 4-stage automated maintenance cycle
+    elif action == 'run_r2_cycle' or action == 'run_full_cycle':
+        # Execute R2 Maintenance Cycle: Drain R2 -> R1 carries traffic -> Restore R2 -> Stop at R2 restored
         steps_results = []
         
         # 1. R2 Down
@@ -862,9 +862,16 @@ def maintenance_action_api(request):
             active_path="🟢 DUAL-ACTIVE PATH: R1 (Master) + R2 (Standby)",
             ping_status=f"{p2['overall_loss_pct']}% Loss (Hitless)",
             latency_ms=p2['overall_latency_ms'],
-            proof_message=f"R2 Restored via eAPI. Dual Active operational. {p2['summary']}"
+            proof_message=f"R2 Restored via eAPI. Dual Active operational. R1 kept intact. {p2['summary']}"
         )
         steps_results.append({'stage': 2, 'name': 'R2 Restored -> Dual Active', 'path': '🟢 Dual Active', 'ping': p2})
+
+        return JsonResponse({
+            'status': 'success',
+            'action': 'r2_maintenance_cycle',
+            'steps': steps_results,
+            'message': 'R2 Maintenance Cycle completed successfully: R2 drained (traffic shifted to R1) -> R2 restored. R1 maintained 100% operational.'
+        })
 
         # 3. R1 Down
         call_router_eapi(r1_mgmt, [
