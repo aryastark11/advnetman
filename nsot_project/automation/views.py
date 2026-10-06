@@ -581,11 +581,13 @@ def get_cluster_failover_status():
     r1_mgmt = "172.20.20.11"
     r2_mgmt = "172.20.20.12"
 
-    r1_ok, r1_res = call_router_eapi(r1_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief"])
-    r2_ok, r2_res = call_router_eapi(r2_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief", "show running-config section router ospf"])
+    # Query live interface states, routing, VRRP, and real-time counter rates via eAPI
+    r1_ok, r1_res = call_router_eapi(r1_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief", "show interfaces Ethernet1,Ethernet2 counters rates"])
+    r2_ok, r2_res = call_router_eapi(r2_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief", "show running-config section router ospf", "show interfaces Ethernet1,Ethernet2 counters rates"])
 
     r1_et2_up = False
     r1_vrrp_state = "Offline"
+    r1_rates = {'et1_in_pps': 0.0, 'et1_out_pps': 0.0, 'et2_in_pps': 0.0, 'et2_out_pps': 0.0, 'total_out_pps': 0.0, 'total_kbps': 0.0}
     if r1_ok and "result" in r1_res:
         intf_out = r1_res["result"][1].get("output", "")
         r1_et2_up = ("connected" in intf_out or "up" in intf_out) and "disabled" not in intf_out
@@ -596,10 +598,32 @@ def get_cluster_failover_status():
             r1_vrrp_state = "Backup"
         elif "Init" in vrrp_out:
             r1_vrrp_state = "Init"
+        
+        # Parse live interface traffic statistics
+        if len(r1_res["result"]) > 3:
+            rates_raw = r1_res["result"][3].get("output", "")
+            for line in rates_raw.splitlines():
+                parts = line.split()
+                if len(parts) >= 8:
+                    if parts[0] == 'Et1':
+                        try:
+                            r1_rates['et1_in_pps'] = float(parts[4])
+                            r1_rates['et1_out_pps'] = float(parts[7])
+                            r1_rates['total_kbps'] += float(parts[2]) + float(parts[5])
+                        except Exception: pass
+                    elif parts[0] == 'Et2':
+                        try:
+                            r1_rates['et2_in_pps'] = float(parts[4])
+                            r1_rates['et2_out_pps'] = float(parts[7])
+                            r1_rates['total_kbps'] += float(parts[2]) + float(parts[5])
+                        except Exception: pass
+            r1_rates['total_out_pps'] = round(r1_rates['et1_out_pps'] + r1_rates['et2_out_pps'], 1)
+            r1_rates['total_kbps'] = round(r1_rates['total_kbps'], 1)
 
     r2_et2_up = False
     r2_vrrp_state = "Offline"
     r2_ospf_redist = False
+    r2_rates = {'et1_in_pps': 0.0, 'et1_out_pps': 0.0, 'et2_in_pps': 0.0, 'et2_out_pps': 0.0, 'total_out_pps': 0.0, 'total_kbps': 0.0}
     if r2_ok and "result" in r2_res:
         intf_out = r2_res["result"][1].get("output", "")
         r2_et2_up = ("connected" in intf_out or "up" in intf_out) and "disabled" not in intf_out
@@ -613,6 +637,27 @@ def get_cluster_failover_status():
         if len(r2_res["result"]) > 3:
             ospf_out = r2_res["result"][3].get("output", "")
             r2_ospf_redist = "redistribute connected" in ospf_out
+        
+        # Parse live interface traffic statistics
+        if len(r2_res["result"]) > 4:
+            rates_raw = r2_res["result"][4].get("output", "")
+            for line in rates_raw.splitlines():
+                parts = line.split()
+                if len(parts) >= 8:
+                    if parts[0] == 'Et1':
+                        try:
+                            r2_rates['et1_in_pps'] = float(parts[4])
+                            r2_rates['et1_out_pps'] = float(parts[7])
+                            r2_rates['total_kbps'] += float(parts[2]) + float(parts[5])
+                        except Exception: pass
+                    elif parts[0] == 'Et2':
+                        try:
+                            r2_rates['et2_in_pps'] = float(parts[4])
+                            r2_rates['et2_out_pps'] = float(parts[7])
+                            r2_rates['total_kbps'] += float(parts[2]) + float(parts[5])
+                        except Exception: pass
+            r2_rates['total_out_pps'] = round(r2_rates['et1_out_pps'] + r2_rates['et2_out_pps'], 1)
+            r2_rates['total_kbps'] = round(r2_rates['total_kbps'], 1)
 
     # Determine Active Forwarding Path
     if r1_et2_up and not r2_et2_up:
@@ -626,7 +671,7 @@ def get_cluster_failover_status():
         r1_status_badge = "Drained (Maintenance Mode)"
         r2_status_badge = "Active (Forwarding 100% Traffic)"
     elif r1_et2_up and r2_et2_up:
-        if not r2_ospf_redist:
+        if not r2_ospf_redist or r2_rates['total_out_pps'] == 0.0:
             active_path = "R1_SOFT"
             active_path_label = "🟢 ACTIVE PATH: R1 (R2 Soft Drained - 100% Traffic, DHCP & GW on R1, R2 Links UP)"
             r1_status_badge = "Active (100% Traffic, VRRP Master & DHCP)"
@@ -654,6 +699,7 @@ def get_cluster_failover_status():
             'et2_up': r1_et2_up,
             'vrrp_state': r1_vrrp_state,
             'status_badge': r1_status_badge,
+            'rates': r1_rates,
         },
         'r2': {
             'mgmt_ip': r2_mgmt,
@@ -661,6 +707,7 @@ def get_cluster_failover_status():
             'et2_up': r2_et2_up,
             'vrrp_state': r2_vrrp_state,
             'status_badge': r2_status_badge,
+            'rates': r2_rates,
         },
         'active_path': active_path,
         'active_path_label': active_path_label,
