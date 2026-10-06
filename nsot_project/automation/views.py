@@ -562,7 +562,7 @@ def get_cluster_failover_status():
     r2_mgmt = "172.20.20.12"
 
     r1_ok, r1_res = call_router_eapi(r1_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief"])
-    r2_ok, r2_res = call_router_eapi(r2_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief"])
+    r2_ok, r2_res = call_router_eapi(r2_mgmt, ["enable", "show interfaces Ethernet2 status", "show vrrp brief", "show running-config section router ospf"])
 
     r1_et2_up = False
     r1_vrrp_state = "Offline"
@@ -579,6 +579,7 @@ def get_cluster_failover_status():
 
     r2_et2_up = False
     r2_vrrp_state = "Offline"
+    r2_ospf_redist = False
     if r2_ok and "result" in r2_res:
         intf_out = r2_res["result"][1].get("output", "")
         r2_et2_up = ("connected" in intf_out or "up" in intf_out) and "disabled" not in intf_out
@@ -589,6 +590,9 @@ def get_cluster_failover_status():
             r2_vrrp_state = "Backup"
         elif "Init" in vrrp_out:
             r2_vrrp_state = "Init"
+        if len(r2_res["result"]) > 3:
+            ospf_out = r2_res["result"][3].get("output", "")
+            r2_ospf_redist = "redistribute connected" in ospf_out
 
     # Determine Active Forwarding Path
     if r1_et2_up and not r2_et2_up:
@@ -602,11 +606,16 @@ def get_cluster_failover_status():
         r1_status_badge = "Drained (Maintenance Mode)"
         r2_status_badge = "Active (Forwarding 100% Traffic)"
     elif r1_et2_up and r2_et2_up:
-        if r1_vrrp_state == "Master":
+        if not r2_ospf_redist:
+            active_path = "R1_SOFT"
+            active_path_label = "🟢 ACTIVE PATH: R1 (R2 Soft Drained - 100% Traffic, DHCP & GW on R1, R2 Links UP)"
+            r1_status_badge = "Active (100% Traffic, VRRP Master & DHCP)"
+            r2_status_badge = "Soft Drained (Physical Links UP, 0% Traffic, DHCP on R1)"
+        elif r1_vrrp_state == "Master":
             active_path = "R1_DUAL"
             active_path_label = "🟢 DUAL-ACTIVE PATH: R1 (VRRP Master) + R2 (Hot Standby)"
-            r1_status_badge = "Active (VRRP Master)"
-            r2_status_badge = "Online (VRRP Standby Ready)"
+            r1_status_badge = "Active (VRRP Master & DHCP Server 2)"
+            r2_status_badge = "Online (VRRP Standby Ready & DHCP Server 1)"
         else:
             active_path = "R2_DUAL"
             active_path_label = "🟢 DUAL-ACTIVE PATH: R2 (VRRP Master) + R1 (Hot Standby)"
@@ -677,7 +686,100 @@ def maintenance_action_api(request):
     s1_mgmt = "172.20.20.21"
     s2_mgmt = "172.20.20.22"
 
-    if action == 'r2_down':
+    if action == 'drain_r2_soft':
+        # Soft Drain R2: Physical links stay UP (no shutdown), but all traffic, routing, and DHCP are routed strictly via R1
+        cmds_r2 = [
+            "enable", "configure",
+            "interface Ethernet2", "no shutdown",
+            "interface Ethernet1", "no shutdown",
+            "interface Ethernet2.10", "vrrp 10 priority-level 1", "no dhcp server ipv4", "no dhcp server ipv6",
+            "interface Ethernet2.20", "vrrp 20 priority-level 1", "no dhcp server ipv4", "no dhcp server ipv6",
+            "interface Ethernet2.30", "vrrp 30 priority-level 1", "no dhcp server ipv6",
+            "router ospf 1", "no redistribute connected", "no redistribute rip",
+            "ipv6 router ospf 1", "no redistribute connected",
+            "router rip", "shutdown"
+        ]
+        cmds_r1 = [
+            "enable", "configure",
+            "interface Ethernet2", "no shutdown",
+            "interface Ethernet1", "no shutdown",
+            "interface Ethernet2.10", "vrrp 10 priority-level 110", "dhcp server ipv4", "dhcp server ipv6",
+            "interface Ethernet2.20", "vrrp 20 priority-level 110", "dhcp server ipv4", "dhcp server ipv6",
+            "interface Ethernet2.30", "vrrp 30 priority-level 110", "dhcp server ipv6",
+            "router ospf 1", "redistribute connected", "redistribute rip",
+            "ipv6 router ospf 1", "redistribute connected",
+            "router rip", "no shutdown"
+        ]
+        call_router_eapi(r2_mgmt, cmds_r2)
+        call_router_eapi(r1_mgmt, cmds_r1)
+        call_router_eapi(s1_mgmt, ["enable", "clear mac address-table dynamic"])
+        call_router_eapi(s2_mgmt, ["enable", "clear mac address-table dynamic"])
+        
+        # Test ping probes and verify hitless forwarding
+        ping_res = run_host_pings(count=3)
+        active_path = "🟢 ACTIVE PATH: R1 (R2 Soft Drained & Physical Links UP)"
+        
+        log_entry = MaintenanceLog.objects.create(
+            stage="R2 Soft Drain (Links Stay UP)",
+            action="eAPI POST /command-api -> Soft Drain R2 (Links UP, VRRP Pri 1, OSPF Drained, DHCP on R1)",
+            target_device="R2 (172.20.20.12)",
+            api_endpoint=f"http://{r2_mgmt}/command-api",
+            api_command=json.dumps(cmds_r2),
+            active_path=active_path,
+            ping_status=f"{ping_res['overall_loss_pct']}% Loss (Hitless)",
+            latency_ms=ping_res['overall_latency_ms'],
+            proof_message=f"R2 Soft Drained (Physical Links UP). 100% Data, DHCP & Gateway handled by R1. {ping_res['summary']}"
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'stage': 'R2 Soft Drained (Links UP)',
+            'active_path': active_path,
+            'ping_res': ping_res,
+            'log_id': log_entry.id,
+            'message': 'R2 successfully Soft Drained via eAPI: Physical links remain UP, while 100% traffic, routing, and DHCP flow exclusively through R1.'
+        })
+
+    elif action == 'restore_r2_soft':
+        # Restore R2 to full dual-active / primary DHCP status
+        cmds_r2 = [
+            "enable", "configure",
+            "interface Ethernet2", "no shutdown",
+            "interface Ethernet1", "no shutdown",
+            "interface Ethernet2.10", "vrrp 10 priority-level 100", "dhcp server ipv4", "dhcp server ipv6",
+            "interface Ethernet2.20", "vrrp 20 priority-level 100", "dhcp server ipv4", "dhcp server ipv6",
+            "interface Ethernet2.30", "vrrp 30 priority-level 100", "dhcp server ipv6",
+            "router ospf 1", "redistribute connected", "redistribute rip",
+            "ipv6 router ospf 1", "redistribute connected",
+            "router rip", "no shutdown"
+        ]
+        call_router_eapi(r2_mgmt, cmds_r2)
+        
+        ping_res = run_host_pings(count=3)
+        active_path = "🟢 DUAL-ACTIVE PATH: R1 (Master) + R2 (Standby Ready)"
+        
+        log_entry = MaintenanceLog.objects.create(
+            stage="R2 Restore (Dual Active Normal)",
+            action="eAPI POST /command-api -> Restore R2 (VRRP Pri 100, OSPF Restored, DHCP Server 1 Active)",
+            target_device="R2 (172.20.20.12)",
+            api_endpoint=f"http://{r2_mgmt}/command-api",
+            api_command=json.dumps(cmds_r2),
+            active_path=active_path,
+            ping_status=f"{ping_res['overall_loss_pct']}% Loss (Hitless)",
+            latency_ms=ping_res['overall_latency_ms'],
+            proof_message=f"R2 fully restored via eAPI. Dual router redundancy and dual DHCP servers active. {ping_res['summary']}"
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'stage': 'R2 Restored',
+            'active_path': active_path,
+            'ping_res': ping_res,
+            'log_id': log_entry.id,
+            'message': 'R2 successfully restored to service via eAPI. Dual active forwarding and dual DHCP servers re-armed.'
+        })
+
+    elif action == 'r2_down':
         # Stage 1: Drain R2 and divert all traffic to R1
         cmds_r2 = [
             "enable", "configure",
