@@ -18,6 +18,9 @@ urlpatterns = [
     path('templates/', views.templates_list_view, name='templates_list'),
     path('templates/render/', views.render_template_view, name='render_template'),
     path('api/devices/', views.api_devices_view, name='api_devices'),
+    path('maintenance/', views.maintenance_view, name='maintenance'),
+    path('api/maintenance/action/', views.maintenance_action_api, name='maintenance_action_api'),
+    path('api/maintenance/status/', views.maintenance_status_api, name='maintenance_status_api'),
 ]
 
 if settings.DEBUG:

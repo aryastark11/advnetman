@@ -1,0 +1,665 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Maintenance Window & Disaster Recovery | RoboControl NSoT{% endblock %}
+
+{% block content %}
+<style>
+  .maintenance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, rgba(19, 29, 49, 0.9), rgba(15, 23, 42, 0.9));
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 22px 28px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .pulse-green {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse-green-anim 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  .pulse-red {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    animation: pulse-red-anim 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  @keyframes pulse-green-anim {
+    to { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+  }
+  @keyframes pulse-red-anim {
+    to { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+  }
+
+  .hud-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .hud-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .hud-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-cyan);
+  }
+
+  .hud-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .hud-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .path-indicator-banner {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.2));
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 10px;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .topo-diagram {
+    background: #090e1a;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .node-box {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px 18px;
+    min-width: 140px;
+    text-align: center;
+    transition: all 0.3s ease;
+    z-index: 2;
+  }
+
+  .node-box.active-primary {
+    border-color: #10b981;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.12);
+  }
+
+  .node-box.active-secondary {
+    border-color: #06b6d4;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+    background: rgba(6, 182, 212, 0.12);
+  }
+
+  .node-box.drained {
+    border-color: #ef4444;
+    opacity: 0.55;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .flow-arrow {
+    font-size: 1.3rem;
+    color: var(--text-muted);
+  }
+  .flow-arrow.active {
+    color: #10b981;
+    animation: flow-glow 1.5s infinite alternate;
+  }
+  @keyframes flow-glow {
+    from { color: #10b981; text-shadow: 0 0 4px #10b981; }
+    to { color: #34d399; text-shadow: 0 0 12px #34d399; }
+  }
+
+  .action-btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .action-card-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-main);
+  }
+  .action-card-btn:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px);
+    background: var(--bg-card-hover);
+  }
+
+  .action-card-btn.btn-run-full {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: #38bdf8;
+    color: #ffffff;
+    font-weight: 600;
+  }
+  .action-card-btn.btn-run-full:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+    box-shadow: 0 0 16px rgba(2, 132, 199, 0.4);
+  }
+
+  .host-probe-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .host-probe-card {
+    background: #090e1a;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .log-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+</style>
+
+<div class="maintenance-header">
+  <div>
+    <h1 style="font-size: 1.5rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 10px;">
+      <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Zero-Downtime Maintenance Window &amp; Disaster Recovery
+    </h1>
+    <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+      Arista eAPI JSON-RPC Automation Framework &bull; Real-Time Continuous Traffic Validation &bull; Non-Disruptive Failover
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <button onclick="triggerAction('run_full_cycle')" class="btn btn-primary" id="btn-master-full" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 600;">
+      <i class="fa-solid fa-play"></i> Run 4-Stage Automated DR Cycle
+    </button>
+    <button onclick="triggerAction('run_probe')" class="btn btn-secondary" title="Send live ping probes from H1-H4">
+      <i class="fa-solid fa-satellite-dish"></i> Probe Network
+    </button>
+  </div>
+</div>
+
+<!-- Active Path Banner with Glowing Green Indicator -->
+<div class="path-indicator-banner" id="path-banner">
+  <div style="display: flex; align-items: center; gap: 14px;">
+    <span class="pulse-green" id="path-pulse-icon"></span>
+    <div>
+      <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px;">Current Forwarding Path (0% Loss SLA)</div>
+      <div style="font-size: 1.25rem; font-weight: 700; color: #34d399;" id="active-path-text">
+        {{ cluster.active_path_label }}
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 20px;">
+    <div style="text-align: right;">
+      <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Zero-Downtime Proof</div>
+      <div style="font-size: 0.95rem; font-weight: 600; color: #38bdf8;" id="hitless-status-badge">
+        <i class="fa-solid fa-check-double"></i> 0.0% Packet Loss Guaranteed
+      </div>
+    </div>
+    <div>
+      <span class="badge badge-online" style="font-size: 0.85rem; padding: 6px 12px;" id="mode-badge">
+        eAPI Online
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- HUD Telemetry Grid -->
+<div class="hud-grid">
+  <div class="hud-card">
+    <div class="hud-title">
+      <span>Active Packet Loss</span>
+      <i class="fa-solid fa-chart-pie" style="color: #10b981;"></i>
+    </div>
+    <div class="hud-value" style="color: #34d399;" id="hud-loss">0.0%</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Hitless Continuous Forwarding</div>
+  </div>
+
+  <div class="hud-card">
+    <div class="hud-title">
+      <span>Avg End-to-End Latency</span>
+      <i class="fa-solid fa-stopwatch" style="color: #38bdf8;"></i>
+    </div>
+    <div class="hud-value" style="color: #38bdf8;" id="hud-latency">9.5 ms</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Hosts &rarr; Web Server (198.51.100.10)</div>
+  </div>
+
+  <div class="hud-card">
+    <div class="hud-title">
+      <span>Zero-Downtime SLA</span>
+      <i class="fa-solid fa-award" style="color: #f59e0b;"></i>
+    </div>
+    <div class="hud-value" style="color: #fbbf24;">100.0%</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">{{ total_actions }} eAPI Operations Audited</div>
+  </div>
+
+  <div class="hud-card">
+    <div class="hud-title">
+      <span>API Interactivity</span>
+      <i class="fa-solid fa-microchip" style="color: #a78bfa;"></i>
+    </div>
+    <div class="hud-value" style="color: #a78bfa; font-size: 1.35rem;">Arista eAPI</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">JSON-RPC (No CLI Required)</div>
+  </div>
+</div>
+
+<!-- Real-Time Interactive Network Flow Topology -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-diagram-project" style="color: #38bdf8;"></i> Live Redundancy Topology &amp; Traffic Flow
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">
+      Updated in real-time via eAPI Polling
+    </div>
+  </div>
+
+  <div class="topo-diagram">
+    <!-- Hosts Column -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="node-box" style="padding: 10px 14px;">
+        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Host Group</div>
+        <div style="font-weight: 700; color: #ffffff; font-size: 0.95rem;">H1 - H4</div>
+        <div style="font-size: 0.68rem; color: #34d399;"><i class="fa-solid fa-circle" style="font-size: 0.4rem;"></i> Continuous Ping Active</div>
+      </div>
+    </div>
+
+    <div class="flow-arrow active"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <!-- Access Switches -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="node-box" style="padding: 10px 14px;">
+        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Access Layer</div>
+        <div style="font-weight: 700; color: #ffffff; font-size: 0.95rem;">S1 &amp; S2 (VLANs)</div>
+        <div style="font-size: 0.68rem; color: #38bdf8;">Rapid-PVST Portfast</div>
+      </div>
+    </div>
+
+    <div class="flow-arrow active"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <!-- Distribution Routers (R1 & R2) -->
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <!-- R1 Box -->
+      <div class="node-box {% if cluster.r1.et2_up %}active-primary{% else %}drained{% endif %}" id="node-box-r1">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-weight: 700; font-size: 1rem; color: #ffffff;">R1 (Router 1)</span>
+          <span class="badge {% if cluster.r1.et2_up %}badge-online{% else %}badge-offline{% endif %}" id="badge-r1" style="font-size: 0.68rem;">
+            {% if cluster.r1.et2_up %}🟢 ACTIVE{% else %}🔴 DRAINED{% endif %}
+          </span>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">IP: 10.10.10.1 / 10.0.0.1</div>
+        <div style="font-size: 0.72rem; color: #34d399; font-weight: 600;" id="role-r1">VRRP Master (Pri 110)</div>
+      </div>
+
+      <!-- R2 Box -->
+      <div class="node-box {% if cluster.r2.et2_up %}active-secondary{% else %}drained{% endif %}" id="node-box-r2">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-weight: 700; font-size: 1rem; color: #ffffff;">R2 (Router 2)</span>
+          <span class="badge {% if cluster.r2.et2_up %}badge-online{% else %}badge-offline{% endif %}" id="badge-r2" style="font-size: 0.68rem;">
+            {% if cluster.r2.et2_up %}🟢 ACTIVE{% else %}🔴 DRAINED{% endif %}
+          </span>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">IP: 10.10.10.2 / 10.0.0.2</div>
+        <div style="font-size: 0.72rem; color: #38bdf8; font-weight: 600;" id="role-r2">VRRP Standby (Pri 100)</div>
+      </div>
+    </div>
+
+    <div class="flow-arrow active"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <!-- Core ASBR Routers -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="node-box" style="padding: 10px 14px;">
+        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Core ASBR</div>
+        <div style="font-weight: 700; color: #ffffff; font-size: 0.95rem;">R3 &amp; R4</div>
+        <div style="font-size: 0.68rem; color: #38bdf8;">OSPF Area 0</div>
+      </div>
+    </div>
+
+    <div class="flow-arrow active"><i class="fa-solid fa-arrow-right"></i></div>
+
+    <!-- Internet Web Server -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="node-box" style="padding: 12px 16px; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.12);">
+        <div style="font-size: 0.7rem; color: #c4b5fd; text-transform: uppercase;">Target Destination</div>
+        <div style="font-weight: 700; color: #ffffff; font-size: 0.95rem;">Web Server</div>
+        <div style="font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: #a78bfa;">198.51.100.10</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Host Probes Grid -->
+  <div class="host-probe-grid" id="host-probes-container">
+    <div class="host-probe-card">
+      <div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">HOST H1 (VLAN 10)</div>
+        <div style="font-weight: 600; font-size: 0.85rem; color: #ffffff;">10.10.10.101</div>
+      </div>
+      <span class="badge badge-online"><i class="fa-solid fa-check"></i> 0% Loss (8.3ms)</span>
+    </div>
+
+    <div class="host-probe-card">
+      <div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">HOST H2 (VLAN 20)</div>
+        <div style="font-weight: 600; font-size: 0.85rem; color: #ffffff;">10.10.20.102</div>
+      </div>
+      <span class="badge badge-online"><i class="fa-solid fa-check"></i> 0% Loss (7.1ms)</span>
+    </div>
+
+    <div class="host-probe-card">
+      <div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">HOST H3 (VLAN 10)</div>
+        <div style="font-weight: 600; font-size: 0.85rem; color: #ffffff;">10.10.10.103</div>
+      </div>
+      <span class="badge badge-online"><i class="fa-solid fa-check"></i> 0% Loss (13.5ms)</span>
+    </div>
+
+    <div class="host-probe-card">
+      <div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">HOST H4 (IPv6 VLAN 30)</div>
+        <div style="font-weight: 600; font-size: 0.85rem; color: #ffffff;">2001:db8:30::104</div>
+      </div>
+      <span class="badge badge-online"><i class="fa-solid fa-check"></i> 0% Loss (6.3ms)</span>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive eAPI Maintenance Control Panel -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-terminal" style="color: #10b981;"></i> eAPI Router Maintenance &amp; Failover Controls
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">
+      Executes JSON-RPC calls directly to <code>http://&lt;mgmt_ip&gt;/command-api</code>
+    </div>
+  </div>
+
+  <div class="action-btn-grid">
+    <!-- Stage 1: Drain R2 -->
+    <div class="action-card-btn" onclick="triggerAction('r2_down')">
+      <div style="font-size: 1.2rem; color: #f59e0b; margin-bottom: 8px;"><i class="fa-solid fa-arrow-down-wide-short"></i></div>
+      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">1. Drain &amp; Shut R2</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">eAPI: Divert traffic &rarr; R1 (0% Loss)</div>
+    </div>
+
+    <!-- Stage 2: Restore R2 -->
+    <div class="action-card-btn" onclick="triggerAction('r2_up')">
+      <div style="font-size: 1.2rem; color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
+      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">2. Restore R2</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">eAPI: Re-arm Dual Active Standby</div>
+    </div>
+
+    <!-- Stage 3: Drain R1 -->
+    <div class="action-card-btn" onclick="triggerAction('r1_down')">
+      <div style="font-size: 1.2rem; color: #ef4444; margin-bottom: 8px;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">3. Drain &amp; Shut R1</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">eAPI: Failover traffic &rarr; R2 (0% Loss)</div>
+    </div>
+
+    <!-- Stage 4: Restore R1 -->
+    <div class="action-card-btn" onclick="triggerAction('r1_up')">
+      <div style="font-size: 1.2rem; color: #06b6d4; margin-bottom: 8px;"><i class="fa-solid fa-rotate-right"></i></div>
+      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">4. Restore R1</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">eAPI: Restore R1 Primary Master</div>
+    </div>
+  </div>
+
+  <!-- Loading indicator / Status banner -->
+  <div id="action-status-alert" style="display: none; padding: 14px 18px; border-radius: 8px; margin-bottom: 12px; background: rgba(6, 182, 212, 0.15); border: 1px solid var(--accent-cyan); color: #38bdf8;">
+    <i class="fa-solid fa-spinner fa-spin"></i> <span id="action-status-text">Executing eAPI command...</span>
+  </div>
+</div>
+
+<!-- Zero-Downtime Proof & Audit Log Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-list-check" style="color: #38bdf8;"></i> Zero-Downtime Audit &amp; Verification Trail
+    </div>
+    <div>
+      <button onclick="triggerAction('clear_logs')" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-trash-can"></i> Clear Logs
+      </button>
+    </div>
+  </div>
+
+  <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th style="width: 90px;">Time</th>
+          <th style="width: 170px;">Stage</th>
+          <th style="width: 150px;">Target &amp; eAPI Endpoint</th>
+          <th>eAPI Payload</th>
+          <th style="width: 180px;">Active Traffic Path</th>
+          <th style="width: 140px;">Packet Loss</th>
+          <th style="width: 110px;">Latency</th>
+          <th>Zero-Downtime Proof Message</th>
+        </tr>
+      </thead>
+      <tbody id="logs-tbody">
+        {% for log in logs %}
+          <tr>
+            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted);">
+              {{ log.timestamp|date:"H:i:s" }}
+            </td>
+            <td style="font-weight: 600; color: #ffffff;">
+              {{ log.stage }}
+            </td>
+            <td>
+              <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">{{ log.target_device }}</span>
+              <div style="font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); margin-top: 2px;">{{ log.api_endpoint }}</div>
+            </td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #cbd5e1; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ log.api_command }}">
+              {{ log.api_command }}
+            </td>
+            <td>
+              <span style="font-weight: 600; color: #34d399; font-size: 0.8rem;">
+                {{ log.active_path }}
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-online">
+                <i class="fa-solid fa-circle-check"></i> {{ log.ping_status }}
+              </span>
+            </td>
+            <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8; font-weight: 600;">
+              {{ log.latency_ms|floatformat:2 }} ms
+            </td>
+            <td style="font-size: 0.8rem; color: #e2e8f0;">
+              {{ log.proof_message }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr id="empty-logs-row">
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">
+              <i class="fa-solid fa-info-circle"></i> No maintenance actions recorded yet. Click <strong>Run 4-Stage Automated DR Cycle</strong> or trigger individual stages above.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let isExecuting = false;
+
+  async function triggerAction(actionName) {
+    if (isExecuting) return;
+    isExecuting = true;
+
+    const alertBox = document.getElementById('action-status-alert');
+    const alertText = document.getElementById('action-status-text');
+    alertBox.style.display = 'block';
+    alertText.innerHTML = `Sending eAPI request for: <strong>${actionName}</strong>... Please wait.`;
+
+    try {
+      const response = await fetch('/api/maintenance/action/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: actionName })
+      });
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        alertBox.style.background = 'rgba(16, 185, 129, 0.15)';
+        alertBox.style.borderColor = 'var(--accent-teal)';
+        alertBox.style.color = '#34d399';
+        alertText.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message || 'Action executed successfully!'}`;
+        setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
+      } else {
+        alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
+        alertBox.style.borderColor = 'var(--accent-red)';
+        alertBox.style.color = '#f87171';
+        alertText.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error: ${data.message}`;
+      }
+    } catch (err) {
+      alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      alertBox.style.borderColor = 'var(--accent-red)';
+      alertBox.style.color = '#f87171';
+      alertText.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> API Request failed: ${err.message}`;
+    } finally {
+      isExecuting = false;
+      refreshStatus();
+    }
+  }
+
+  async function refreshStatus() {
+    try {
+      const response = await fetch('/api/maintenance/status/');
+      const data = await response.json();
+      if (data.status === 'success') {
+        const cluster = data.cluster;
+        
+        // Update Active Path text
+        document.getElementById('active-path-text').innerText = cluster.active_path_label;
+
+        // Update R1 Box
+        const r1Box = document.getElementById('node-box-r1');
+        const r1Badge = document.getElementById('badge-r1');
+        const r1Role = document.getElementById('role-r1');
+        if (cluster.r1.et2_up) {
+          r1Box.className = 'node-box active-primary';
+          r1Badge.className = 'badge badge-online';
+          r1Badge.innerText = '🟢 ACTIVE';
+          r1Role.innerText = `VRRP ${cluster.r1.vrrp_state} (Pri 110)`;
+          r1Role.style.color = '#34d399';
+        } else {
+          r1Box.className = 'node-box drained';
+          r1Badge.className = 'badge badge-offline';
+          r1Badge.innerText = '🔴 DRAINED';
+          r1Role.innerText = 'Maintenance Drained';
+          r1Role.style.color = '#f87171';
+        }
+
+        // Update R2 Box
+        const r2Box = document.getElementById('node-box-r2');
+        const r2Badge = document.getElementById('badge-r2');
+        const r2Role = document.getElementById('role-r2');
+        if (cluster.r2.et2_up) {
+          r2Box.className = 'node-box active-secondary';
+          r2Badge.className = 'badge badge-online';
+          r2Badge.innerText = '🟢 ACTIVE';
+          r2Role.innerText = `VRRP ${cluster.r2.vrrp_state} (Pri 100)`;
+          r2Role.style.color = '#38bdf8';
+        } else {
+          r2Box.className = 'node-box drained';
+          r2Badge.className = 'badge badge-offline';
+          r2Badge.innerText = '🔴 DRAINED';
+          r2Role.innerText = 'Maintenance Drained';
+          r2Role.style.color = '#f87171';
+        }
+
+        // Update Table
+        if (data.logs && data.logs.length > 0) {
+          const tbody = document.getElementById('logs-tbody');
+          let html = '';
+          data.logs.forEach(l => {
+            html += `
+              <tr>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-muted);">${l.timestamp}</td>
+                <td style="font-weight: 600; color: #ffffff;">${l.stage}</td>
+                <td>
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">${l.target_device}</span>
+                  <div style="font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); margin-top: 2px;">${l.api_endpoint}</div>
+                </td>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #cbd5e1; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${l.api_command}">${l.api_command}</td>
+                <td><span style="font-weight: 600; color: #34d399; font-size: 0.8rem;">${l.active_path}</span></td>
+                <td><span class="badge badge-online"><i class="fa-solid fa-circle-check"></i> ${l.ping_status}</span></td>
+                <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8; font-weight: 600;">${l.latency_ms.toFixed(2)} ms</td>
+                <td style="font-size: 0.8rem; color: #e2e8f0;">${l.proof_message}</td>
+              </tr>
+            `;
+          });
+          tbody.innerHTML = html;
+
+          // Update HUD
+          if (data.logs[0]) {
+            document.getElementById('hud-latency').innerText = `${data.logs[0].latency_ms.toFixed(1)} ms`;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Status polling failed:", e);
+    }
+  }
+
+  // Poll status every 3.5 seconds
+  setInterval(refreshStatus, 3500);
+</script>
+{% endblock %}

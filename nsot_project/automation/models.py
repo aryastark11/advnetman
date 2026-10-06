@@ -97,3 +97,22 @@ class TemplateModel(models.Model):
 
     def __str__(self):
         return f"[{self.vendor}] {self.name} ({self.tier})"
+
+
+class MaintenanceLog(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    stage = models.CharField(max_length=64)
+    action = models.CharField(max_length=128)
+    target_device = models.CharField(max_length=64)
+    api_endpoint = models.CharField(max_length=128, default="http://<mgmt_ip>/command-api")
+    api_command = models.TextField()
+    active_path = models.CharField(max_length=128)
+    ping_status = models.CharField(max_length=64, default="0% Packet Loss (Hitless)")
+    latency_ms = models.FloatField(default=0.0)
+    proof_message = models.TextField()
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"[{self.timestamp.strftime('%H:%M:%S')}] {self.action} -> Path: {self.active_path}"
