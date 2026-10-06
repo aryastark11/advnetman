@@ -142,7 +142,9 @@
             {% endif %}
           </td>
           <td>
-            {% if "Degraded" in dev.status %}
+            {% if "Drained" in dev.status %}
+              <span class="badge badge-drained" title="Router is drained / in maintenance mode (0% traffic)"><i class="fa-solid fa-filter-circle-xmark" style="font-size: 0.6rem;"></i> Drained</span>
+            {% elif "Degraded" in dev.status %}
               <span class="badge badge-warning" title="One or more physical interfaces are down"><i class="fa-solid fa-triangle-exclamation" style="font-size: 0.6rem;"></i> {{ dev.status }}</span>
             {% elif dev.status == "Online" %}
               <span class="badge badge-online"><i class="fa-solid fa-check-circle" style="font-size: 0.6rem;"></i> Online</span>

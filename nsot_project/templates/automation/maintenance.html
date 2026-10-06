@@ -335,27 +335,31 @@
     <!-- Distribution Routers (R1 & R2) -->
     <div style="display: flex; flex-direction: column; gap: 14px;">
       <!-- R1 Box -->
-      <div class="node-box {% if cluster.r1.et2_up %}active-primary{% else %}drained{% endif %}" id="node-box-r1">
+      <div class="node-box {% if 'Drained' in cluster.r1.status_badge %}drained{% elif cluster.r1.et2_up %}active-primary{% else %}drained{% endif %}" id="node-box-r1">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
           <span style="font-weight: 700; font-size: 1rem; color: #ffffff;">R1 (Router 1)</span>
-          <span class="badge {% if cluster.r1.et2_up %}badge-online{% else %}badge-offline{% endif %}" id="badge-r1" style="font-size: 0.68rem;">
-            {% if cluster.r1.et2_up %}🟢 ACTIVE{% else %}🔴 DRAINED{% endif %}
+          <span class="badge {% if 'Drained' in cluster.r1.status_badge %}badge-drained{% elif cluster.r1.et2_up %}badge-online{% else %}badge-offline{% endif %}" id="badge-r1" style="font-size: 0.68rem;">
+            {% if 'Drained' in cluster.r1.status_badge %}🟠 DRAINED{% elif cluster.r1.et2_up %}🟢 ACTIVE{% else %}🔴 DRAINED{% endif %}
           </span>
         </div>
         <div style="font-size: 0.72rem; color: var(--text-muted);">IP: 10.10.10.1 / 10.0.0.1</div>
-        <div style="font-size: 0.72rem; color: #34d399; font-weight: 600;" id="role-r1">VRRP Master (Pri 110)</div>
+        <div style="font-size: 0.72rem; {% if 'Drained' in cluster.r1.status_badge %}color: #fbbf24;{% else %}color: #34d399;{% endif %} font-weight: 600;" id="role-r1">
+          {% if 'Drained' in cluster.r1.status_badge %}Drained (0% Traffic){% else %}VRRP Master (Pri 110 &amp; DHCP){% endif %}
+        </div>
       </div>
 
       <!-- R2 Box -->
-      <div class="node-box {% if cluster.r2.et2_up %}active-secondary{% else %}drained{% endif %}" id="node-box-r2">
+      <div class="node-box {% if 'Drained' in cluster.r2.status_badge %}drained{% elif cluster.r2.et2_up %}active-secondary{% else %}drained{% endif %}" id="node-box-r2">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
           <span style="font-weight: 700; font-size: 1rem; color: #ffffff;">R2 (Router 2)</span>
-          <span class="badge {% if cluster.r2.et2_up %}badge-online{% else %}badge-offline{% endif %}" id="badge-r2" style="font-size: 0.68rem;">
-            {% if cluster.r2.et2_up %}🟢 ACTIVE{% else %}🔴 DRAINED{% endif %}
+          <span class="badge {% if 'Drained' in cluster.r2.status_badge %}badge-drained{% elif cluster.r2.et2_up %}badge-online{% else %}badge-offline{% endif %}" id="badge-r2" style="font-size: 0.68rem;">
+            {% if 'Drained' in cluster.r2.status_badge %}🟠 DRAINED{% elif cluster.r2.et2_up %}🟢 ACTIVE{% else %}🔴 DRAINED{% endif %}
           </span>
         </div>
         <div style="font-size: 0.72rem; color: var(--text-muted);">IP: 10.10.10.2 / 10.0.0.2</div>
-        <div style="font-size: 0.72rem; color: #38bdf8; font-weight: 600;" id="role-r2">VRRP Standby (Pri 100)</div>
+        <div style="font-size: 0.72rem; {% if 'Drained' in cluster.r2.status_badge %}color: #fbbf24;{% else %}color: #38bdf8;{% endif %} font-weight: 600;" id="role-r2">
+          {% if 'Drained' in cluster.r2.status_badge %}Drained (0% Traffic &bull; Soft Drained){% else %}VRRP Standby (Pri 100){% endif %}
+        </div>
       </div>
     </div>
 
@@ -589,11 +593,17 @@
         const r1Box = document.getElementById('node-box-r1');
         const r1Badge = document.getElementById('badge-r1');
         const r1Role = document.getElementById('role-r1');
-        if (cluster.r1.et2_up) {
+        if (cluster.r1.status_badge && cluster.r1.status_badge.includes('Drained')) {
+          r1Box.className = 'node-box drained';
+          r1Badge.className = 'badge badge-drained';
+          r1Badge.innerText = '🟠 DRAINED';
+          r1Role.innerText = 'Drained (0% Traffic)';
+          r1Role.style.color = '#fbbf24';
+        } else if (cluster.r1.et2_up) {
           r1Box.className = 'node-box active-primary';
           r1Badge.className = 'badge badge-online';
           r1Badge.innerText = '🟢 ACTIVE';
-          r1Role.innerText = `VRRP ${cluster.r1.vrrp_state} (Pri 110)`;
+          r1Role.innerText = `VRRP ${cluster.r1.vrrp_state} (Pri 110 & DHCP)`;
           r1Role.style.color = '#34d399';
         } else {
           r1Box.className = 'node-box drained';
@@ -607,7 +617,13 @@
         const r2Box = document.getElementById('node-box-r2');
         const r2Badge = document.getElementById('badge-r2');
         const r2Role = document.getElementById('role-r2');
-        if (cluster.r2.et2_up) {
+        if (cluster.r2.status_badge && cluster.r2.status_badge.includes('Drained')) {
+          r2Box.className = 'node-box drained';
+          r2Badge.className = 'badge badge-drained';
+          r2Badge.innerText = '🟠 DRAINED';
+          r2Role.innerText = 'Drained (0% Traffic • Soft Drained)';
+          r2Role.style.color = '#fbbf24';
+        } else if (cluster.r2.et2_up) {
           r2Box.className = 'node-box active-secondary';
           r2Badge.className = 'badge badge-online';
           r2Badge.innerText = '🟢 ACTIVE';

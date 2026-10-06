@@ -80,7 +80,8 @@ def pull_live_config_from_node(device):
 
 def check_device_live_status(device):
     """
-    Checks operational health and interface states of device via eAPI.
+    Checks operational health, interface states, and maintenance drain status of device via eAPI.
+    If the router is in soft or hard maintenance drain, returns 'Drained'.
     If one or more physical interfaces are down, returns 'Degraded (<interface> Down)'.
     """
     name = device.name.lower()
@@ -96,8 +97,8 @@ def check_device_live_status(device):
             "method": "runCmds",
             "params": {
                 "version": 1,
-                "cmds": ["enable", "show interfaces status"],
-                "format": "json"
+                "cmds": ["enable", "show interfaces status", "show running-config section router ospf", "show vrrp brief"],
+                "format": "text"
             },
             "id": "nsot-intf-status"
         }
@@ -110,10 +111,20 @@ def check_device_live_status(device):
             with urllib.request.urlopen(req, timeout=1.8) as resp:
                 res = json.loads(resp.read().decode("utf-8"))
                 if "result" in res and len(res["result"]) > 1:
-                    statuses = res["result"][1].get("interfaceStatuses", {})
-                    down_intfs = [k for k, v in statuses.items() if k.startswith("Ethernet") and "." not in k and (v.get("linkStatus") != "connected" or v.get("lineProtocolStatus") != "up")]
-                    if down_intfs:
-                        return f"Degraded ({', '.join(down_intfs)} Down)"
+                    intf_out = res["result"][1].get("output", "")
+                    ospf_out = res["result"][2].get("output", "") if len(res["result"]) > 2 else ""
+                    vrrp_out = res["result"][3].get("output", "") if len(res["result"]) > 3 else ""
+
+                    # Check for Drained maintenance state on distribution routers (R1/R2)
+                    if name in ['r1', 'r2']:
+                        if "disabled" in intf_out or ("redistribute connected" not in ospf_out and "Pri 1 " in vrrp_out) or ("redistribute connected" not in ospf_out and name == 'r2'):
+                            return "Drained"
+
+                    # Check physical interface states
+                    down_lines = [l for l in intf_out.splitlines() if l.startswith("Et") and "disabled" in l]
+                    if down_lines:
+                        intf_names = [l.split()[0] for l in down_lines]
+                        return f"Degraded ({', '.join(intf_names)} Down)"
                     return "Online"
         except Exception:
             return "Offline"
@@ -130,6 +141,13 @@ def check_device_live_status(device):
 
 def dashboard_view(request):
     devices = Device.objects.all()
+    # Refresh live status on dashboard load
+    for dev in devices:
+        live_status = check_device_live_status(dev)
+        if dev.status != live_status:
+            dev.status = live_status
+            dev.save(update_fields=['status'])
+
     device_type_filter = request.GET.get('type')
     vendor_filter = request.GET.get('vendor')
     search_query = request.GET.get('q')
@@ -142,7 +160,8 @@ def dashboard_view(request):
         devices = devices.filter(name__icontains=search_query)
 
     total_devices = Device.objects.count()
-    online_count = Device.objects.filter(status='Online').count()
+    online_count = Device.objects.filter(status__in=['Online', 'Drained']).count()
+    drained_count = Device.objects.filter(status='Drained').count()
     golden_count = GoldenConfig.objects.count()
     template_count = TemplateModel.objects.count()
 
@@ -150,6 +169,7 @@ def dashboard_view(request):
         'devices': devices,
         'total_devices': total_devices,
         'online_count': online_count,
+        'drained_count': drained_count,
         'golden_count': golden_count,
         'template_count': template_count,
         'current_type': device_type_filter or 'all',
