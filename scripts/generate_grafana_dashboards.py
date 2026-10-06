@@ -393,6 +393,113 @@ dashboard = {
           "refId": "A"
         }
       ]
+    },
+
+    # Row 4: Live Interface Counters & Port Statistics
+    {
+      "collapsed": False,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25},
+      "id": 400,
+      "title": "Live Interface Counters, Error Rates & Discards (Routers R1-R5, Switches S1-S4)",
+      "type": "row"
+    },
+    {
+      "id": 13,
+      "title": "Live Interface Counters & Port Statistics Table",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 15, "x": 0, "y": 26},
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(ifOperStatus) AS \"Status\", last(ifInOctets) AS \"Inbound (Bytes)\", last(ifOutOctets) AS \"Outbound (Bytes)\", last(ifInErrors) AS \"In Errors\", last(ifOutErrors) AS \"Out Errors\", last(ifInDiscards) AS \"In Discards\", last(ifOutDiscards) AS \"Out Discards\" FROM telegraf_interface_stats WHERE $timeFilter AND ifDescr =~ /Ethernet/ GROUP BY hostname, ifDescr",
+          "rawQuery": True,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Status"},
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {"type": "value", "options": {"1": {"text": "🟢 UP", "color": "green"}, "2": {"text": "🔴 DOWN", "color": "red"}}}
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Inbound (Bytes)"},
+            "properties": [{"id": "unit", "value": "bytes"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Outbound (Bytes)"},
+            "properties": [{"id": "unit", "value": "bytes"}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "In Errors"},
+            "properties": [
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "red", "value": 1}]}},
+              {"id": "custom.displayMode", "value": "color-background"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Out Errors"},
+            "properties": [
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "red", "value": 1}]}},
+              {"id": "custom.displayMode", "value": "color-background"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "In Discards"},
+            "properties": [
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "yellow", "value": 1}]}},
+              {"id": "custom.displayMode", "value": "color-background"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Out Discards"},
+            "properties": [
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "yellow", "value": 1}]}},
+              {"id": "custom.displayMode", "value": "color-background"}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "title": "Real-Time Interface Error & Discard Counter Trends",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 9, "x": 15, "y": 26},
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT non_negative_derivative(mean(ifInErrors), 10s) AS \"In Errors\", non_negative_derivative(mean(ifOutErrors), 10s) AS \"Out Errors\", non_negative_derivative(mean(ifInDiscards), 10s) AS \"In Discards\", non_negative_derivative(mean(ifOutDiscards), 10s) AS \"Out Discards\" FROM telegraf_interface_stats WHERE $timeFilter AND ifDescr =~ /Ethernet/ GROUP BY time($__interval), hostname fill(0)",
+          "rawQuery": True,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "fillOpacity": 15
+          },
+          "unit": "short",
+          "min": 0
+        }
+      }
     }
   ],
   "refresh": "5s",
