@@ -221,11 +221,14 @@
     </p>
   </div>
   <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-    <button onclick="triggerAction('drain_r2_soft')" class="btn btn-primary" id="btn-soft-drain" style="background: linear-gradient(135deg, #f59e0b, #d97706); font-weight: 600;">
-      <i class="fa-solid fa-filter-circle-xmark"></i> Drain R2 (Links Stay UP &bull; 100% Traffic to R1)
+    <button onclick="triggerAction('drain_r2_soft')" class="btn btn-primary" id="btn-soft-drain-r2" style="background: linear-gradient(135deg, #f59e0b, #d97706); font-weight: 600;">
+      <i class="fa-solid fa-filter-circle-xmark"></i> Drain R2 (100% Traffic to R1)
     </button>
-    <button onclick="triggerAction('restore_r2_soft')" class="btn btn-primary" id="btn-soft-restore" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 600;">
-      <i class="fa-solid fa-rotate"></i> Restore R2 (Re-arm Standby)
+    <button onclick="triggerAction('drain_r1_soft')" class="btn btn-primary" id="btn-soft-drain-r1" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-weight: 600;">
+      <i class="fa-solid fa-shuffle"></i> Drain R1 (Reverse: 100% Traffic to R2)
+    </button>
+    <button onclick="triggerAction('restore_all_normal')" class="btn btn-primary" id="btn-soft-restore" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 600;">
+      <i class="fa-solid fa-rotate"></i> Restore Dual-Active Cluster
     </button>
     <button onclick="triggerAction('run_probe')" class="btn btn-secondary" title="Send live ping probes from H1-H4">
       <i class="fa-solid fa-satellite-dish"></i> Probe Network
@@ -439,26 +442,26 @@
     </div>
   </div>
 
-  <div class="action-btn-grid" style="grid-template-columns: repeat(3, 1fr);">
-    <!-- Primary Option: Soft Drain R2 -->
+  <div class="action-btn-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 12px;">
+    <!-- Option 1: Soft Drain R2 -->
     <div class="action-card-btn" onclick="triggerAction('drain_r2_soft')" style="border-color: #f59e0b; background: rgba(245, 158, 11, 0.08);">
       <div style="font-size: 1.3rem; color: #f59e0b; margin-bottom: 8px;"><i class="fa-solid fa-filter-circle-xmark"></i></div>
-      <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #fbbf24;">1. Soft Drain R2 (Links Stay UP)</div>
-      <div style="font-size: 0.75rem; color: #94a3b8;">Divert 100% Traffic, VRRP &amp; DHCPv4/v6 to R1 (No Interface Shutdown)</div>
+      <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #fbbf24;">1. Soft Drain R2 &bull; Traffic to R1</div>
+      <div style="font-size: 0.75rem; color: #94a3b8;">Divert 100% Traffic, VRRP &amp; DHCP to R1 (Links Stay UP)</div>
     </div>
 
-    <!-- Restore R2 -->
-    <div class="action-card-btn" onclick="triggerAction('restore_r2_soft')" style="border-color: #10b981; background: rgba(16, 185, 129, 0.08);">
+    <!-- Option 2: Soft Drain R1 (Reverse Flow) -->
+    <div class="action-card-btn" onclick="triggerAction('drain_r1_soft')" style="border-color: #8b5cf6; background: rgba(139, 92, 246, 0.08);">
+      <div style="font-size: 1.3rem; color: #a78bfa; margin-bottom: 8px;"><i class="fa-solid fa-shuffle"></i></div>
+      <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #c4b5fd;">2. Soft Drain R1 &bull; Traffic to R2</div>
+      <div style="font-size: 0.75rem; color: #94a3b8;">Reverse Flow: 100% Traffic, VRRP &amp; DHCP to R2 (Links Stay UP)</div>
+    </div>
+
+    <!-- Option 3: Restore All Dual-Active -->
+    <div class="action-card-btn" onclick="triggerAction('restore_all_normal')" style="border-color: #10b981; background: rgba(16, 185, 129, 0.08);">
       <div style="font-size: 1.3rem; color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-rotate"></i></div>
-      <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #34d399;">2. Restore R2 (Re-arm Standby)</div>
-      <div style="font-size: 0.75rem; color: #94a3b8;">Re-arm R2 VRRP Standby, OSPF routes &amp; DHCP Server 1</div>
-    </div>
-
-    <!-- Hard Drain R2 -->
-    <div class="action-card-btn" onclick="triggerAction('r2_down')">
-      <div style="font-size: 1.3rem; color: #ef4444; margin-bottom: 8px;"><i class="fa-solid fa-power-off"></i></div>
-      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">Hard Shut R2 (Interface Down)</div>
-      <div style="font-size: 0.75rem; color: var(--text-muted);">Administrative interface shutdown via eAPI</div>
+      <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #34d399;">3. Restore All &bull; Dual-Active</div>
+      <div style="font-size: 0.75rem; color: #94a3b8;">Re-arm both R1 &amp; R2 (Dual Active + Redundant DHCP)</div>
     </div>
   </div>
 
@@ -607,14 +610,14 @@
           r1Box.className = 'node-box drained';
           r1Badge.className = 'badge badge-drained';
           r1Badge.innerText = '🟠 DRAINED';
-          r1Role.innerText = 'Drained (0% Traffic)';
+          r1Role.innerText = 'Drained (0% Traffic • Soft Drained)';
           r1Role.style.color = '#fbbf24';
         } else if (cluster.r1.et2_up) {
-          r1Box.className = 'node-box active-primary';
+          r1Box.className = cluster.r1.vrrp_state === 'Master' ? 'node-box active-primary' : 'node-box active-secondary';
           r1Badge.className = 'badge badge-online';
           r1Badge.innerText = '🟢 ACTIVE';
-          r1Role.innerText = `VRRP ${cluster.r1.vrrp_state} (Pri 110 & DHCP)`;
-          r1Role.style.color = '#34d399';
+          r1Role.innerText = cluster.r1.vrrp_state === 'Master' ? 'VRRP Master (Pri 110 & DHCP)' : 'VRRP Standby (Pri 100)';
+          r1Role.style.color = cluster.r1.vrrp_state === 'Master' ? '#34d399' : '#38bdf8';
         } else {
           r1Box.className = 'node-box drained';
           r1Badge.className = 'badge badge-offline';
@@ -638,11 +641,11 @@
           r2Role.innerText = 'Drained (0% Traffic • Soft Drained)';
           r2Role.style.color = '#fbbf24';
         } else if (cluster.r2.et2_up) {
-          r2Box.className = 'node-box active-secondary';
+          r2Box.className = cluster.r2.vrrp_state === 'Master' ? 'node-box active-primary' : 'node-box active-secondary';
           r2Badge.className = 'badge badge-online';
           r2Badge.innerText = '🟢 ACTIVE';
-          r2Role.innerText = `VRRP ${cluster.r2.vrrp_state} (Pri 100)`;
-          r2Role.style.color = '#38bdf8';
+          r2Role.innerText = cluster.r2.vrrp_state === 'Master' ? 'VRRP Master (Pri 110 & DHCP)' : 'VRRP Standby (Pri 100)';
+          r2Role.style.color = cluster.r2.vrrp_state === 'Master' ? '#34d399' : '#38bdf8';
         } else {
           r2Box.className = 'node-box drained';
           r2Badge.className = 'badge badge-offline';
