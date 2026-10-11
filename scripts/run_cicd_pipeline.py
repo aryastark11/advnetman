@@ -8,6 +8,7 @@ Used locally by network engineers and in GitHub Actions CI/CD workflows.
 import os
 import sys
 import time
+import json
 import argparse
 import subprocess
 
@@ -19,6 +20,8 @@ def print_banner(title):
     print(f"  {title}")
     print("=" * 80)
 
+STAGE_HISTORY = []
+
 def run_stage(stage_num, stage_name, cmd_args, stop_on_fail=True):
     print_banner(f"STAGE {stage_num}: {stage_name.upper()}")
     start_time = time.time()
@@ -26,10 +29,32 @@ def run_stage(stage_num, stage_name, cmd_args, stop_on_fail=True):
     cmd_str = " ".join(cmd_args)
     print(f"[*] Executing: {cmd_str}\n")
     
-    res = subprocess.run(cmd_args, cwd=BASE_DIR)
+    res = subprocess.run(cmd_args, cwd=BASE_DIR, capture_output=True, text=True)
     elapsed = time.time() - start_time
     
-    if res.returncode == 0:
+    output_combined = (res.stdout or "") + ("\n" + res.stderr if res.stderr else "")
+    if res.stdout:
+        print(res.stdout, end="")
+    if res.stderr:
+        print(res.stderr, file=sys.stderr, end="")
+    
+    os.makedirs(BUILD_DIR, exist_ok=True)
+    stage_log_path = os.path.join(BUILD_DIR, f"stage_{stage_num}.log")
+    with open(stage_log_path, "w", encoding="utf-8") as f:
+        f.write(output_combined)
+    
+    passed = (res.returncode == 0)
+    STAGE_HISTORY.append({
+        "id": stage_num,
+        "name": stage_name,
+        "cmd": cmd_str,
+        "passed": passed,
+        "returncode": res.returncode,
+        "elapsed_sec": round(elapsed, 2),
+        "log_file": f"stage_{stage_num}.log"
+    })
+    
+    if passed:
         print(f"\n[\033[92mSTAGE {stage_num} PASSED\033[0m] {stage_name} ({elapsed:.2f}s)")
         return True
     else:
@@ -106,6 +131,19 @@ def main():
     summary_file = generate_consolidated_report(BUILD_DIR)
 
     total_time = time.time() - pipeline_start
+
+    meta_path = os.path.join(BUILD_DIR, "stages_meta.json")
+    try:
+        with open(meta_path, "w", encoding="utf-8") as mf:
+            json.dump({
+                "status": "success",
+                "total_elapsed": round(total_time, 2),
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+                "stages": STAGE_HISTORY
+            }, mf, indent=2)
+    except Exception as e:
+        print(f"[!] Warning: could not write stages_meta.json: {e}")
+
     print_banner(f"🎉 PIPELINE COMPLETED SUCCESSFULLY IN {total_time:.2f} SECONDS")
 
 if __name__ == "__main__":
