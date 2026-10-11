@@ -69,7 +69,7 @@ jobs:
       - name: Verify Python & Dependencies
         run: |
           python3 --version
-          python3 -m pip install -q pyyaml jinja2 hvac requests pyeapi
+          python3 -c "import yaml, jinja2, hvac, requests, pyeapi; print('Python & dependencies verified.')" || python3 -m pip install --break-system-packages -q pyyaml jinja2 hvac requests pyeapi
 
       - name: Run Static Schema, Template & Secret Scans
         run: |

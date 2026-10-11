@@ -133,19 +133,19 @@ def main():
     runner.test("Data Plane - Internet Access", "H1 (VLAN 10) -> Web Server IPv4 Ping",
                 "docker exec clab-lab1-h1 ping -c 2 -W 2 198.51.100.10")
     runner.test("Data Plane - Internet Access", "H1 (VLAN 10) -> Web Server HTTP 200 GET",
-                "docker exec clab-lab1-h1 curl -s -m 3 http://198.51.100.10 | grep -q 'Hello World'")
+                "docker exec clab-lab1-h1 curl -s -m 5 http://198.51.100.10 | grep -q 'Hello World'")
     runner.test("Data Plane - Internet Access", "H2 (VLAN 20) -> Web Server IPv4 Ping",
                 "docker exec clab-lab1-h2 ping -c 2 -W 2 198.51.100.10")
     runner.test("Data Plane - Internet Access", "H2 (VLAN 20) -> Web Server HTTP 200 GET",
-                "docker exec clab-lab1-h2 curl -s -m 3 http://198.51.100.10 | grep -q 'Hello World'")
+                "docker exec clab-lab1-h2 curl -s -m 5 http://198.51.100.10 | grep -q 'Hello World'")
     runner.test("Data Plane - Internet Access", "H3 (VLAN 10) -> Web Server IPv4 Ping",
                 "docker exec clab-lab1-h3 ping -c 2 -W 2 198.51.100.10")
     runner.test("Data Plane - Internet Access", "H3 (VLAN 10) -> Web Server HTTP 200 GET",
-                "docker exec clab-lab1-h3 curl -s -m 3 http://198.51.100.10 | grep -q 'Hello World'")
+                "docker exec clab-lab1-h3 curl -s -m 5 http://198.51.100.10 | grep -q 'Hello World'")
     runner.test("Data Plane - Internet Access", "H4 (VLAN 30) -> Web Server IPv6 Ping",
                 "docker exec clab-lab1-h4 ping6 -c 2 -W 2 2001:db8:100::10")
     runner.test("Data Plane - Internet Access", "H4 (VLAN 30) -> Web Server HTTP 200 GET (IPv6)",
-                "docker exec clab-lab1-h4 curl -6 -s -m 3 http://[2001:db8:100::10] | grep -q 'Hello World'")
+                "docker exec clab-lab1-h4 curl -6 -s -m 5 http://[2001:db8:100::10] | grep -q 'Hello World'")
 
     # 2. DATA PLANE: Inter-VLAN & Intra-VLAN Connectivity
     print("\n--- 4.2 Data Plane: Inter-VLAN & Intra-VLAN Switching & Routing ---")

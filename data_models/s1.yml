@@ -19,7 +19,7 @@ ports:
   cisco_name: Ethernet1/1
   sonic_name: Ethernet0
   mode: trunk
-  allowed_vlans: 10,20
+  allowed_vlans: 10,20,30
   description: Trunk to R1 (Distribution)
 - name: Ethernet2
   cisco_name: Ethernet1/2
