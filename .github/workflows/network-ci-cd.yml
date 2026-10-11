@@ -4,33 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'data_models/**'
-      - 'Jinja2_templates_Arista/**'
-      - 'Jinja2_templates_Cisco_NXOS/**'
-      - 'Jinja2_templates_Cisco_XRv9k/**'
-      - 'Jinja2_templates_SONiC/**'
-      - 'configs/**'
-      - 'golden_configs/**'
-      - 'ipam/**'
-      - 'ipam.csv'
-      - 'scripts/**'
-      - '.github/workflows/**'
   pull_request:
     branches:
       - main
-    paths:
-      - 'data_models/**'
-      - 'Jinja2_templates_Arista/**'
-      - 'Jinja2_templates_Cisco_NXOS/**'
-      - 'Jinja2_templates_Cisco_XRv9k/**'
-      - 'Jinja2_templates_SONiC/**'
-      - 'configs/**'
-      - 'golden_configs/**'
-      - 'ipam/**'
-      - 'ipam.csv'
-      - 'scripts/**'
-      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       target_device:

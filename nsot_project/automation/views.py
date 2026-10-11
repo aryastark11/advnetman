@@ -1668,7 +1668,36 @@ def api_commit_and_pipeline(request):
         with open(os.path.join(cfg_dir, "running-config.cfg"), "w", encoding="utf-8") as f:
             f.write(new_running_cfg)
 
-    # Step 3: Trigger Automated Verification Suite (Stage 4 of CI/CD)
+    # Step 3: Git Commit & Push to GitHub to automatically trigger GitHub Actions CI/CD Pipeline
+    repo_dir = os.path.abspath(os.path.join(settings.BASE_DIR, ".."))
+    git_committed = False
+    git_pushed = False
+    git_commit_sha = ""
+    git_msg = commit_message or f"feat({device_name.lower()}): update configuration via NSoT"
+
+    try:
+        cfg_file_path = os.path.join(cfg_dir, "running-config.cfg")
+        cfg_rel = os.path.relpath(cfg_file_path, repo_dir)
+        subprocess.run(["git", "add", cfg_rel], cwd=repo_dir, check=False)
+
+        diff_chk = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=repo_dir)
+        if diff_chk.returncode != 0:
+            commit_res = subprocess.run(
+                ["git", "commit", "-m", f"feat({device_name.lower()}): {git_msg}"],
+                cwd=repo_dir, capture_output=True, text=True
+            )
+            if commit_res.returncode == 0:
+                git_committed = True
+                sha_res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=repo_dir, capture_output=True, text=True)
+                git_commit_sha = sha_res.stdout.strip()
+                
+                # Push to GitHub to trigger GitHub Actions
+                push_res = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=30)
+                git_pushed = (push_res.returncode == 0)
+    except Exception as ge:
+        print(f"[!] Git commit/push error: {ge}")
+
+    # Step 4: Trigger Automated Verification Suite (Stage 4 of CI/CD)
     ver_script = os.path.join(settings.BASE_DIR, "..", "scripts", "verify_network_health.py")
     ver_report_file = os.path.join(settings.BASE_DIR, "..", "build", "verification_report.md")
     os.makedirs(os.path.dirname(ver_report_file), exist_ok=True)
@@ -1696,7 +1725,7 @@ def api_commit_and_pipeline(request):
 
     deploy_ready = (ver_proc.returncode == 0 and passed_tests == total_tests)
 
-    # Step 4: Record Maintenance Log
+    # Step 5: Record Maintenance Log
     MaintenanceLog.objects.create(
         stage=f"NSoT Config Change: {device_name}",
         action=f"eAPI POST /command-api -> {commit_message}",
@@ -1706,7 +1735,7 @@ def api_commit_and_pipeline(request):
         active_path="🟢 Configuration Verified & Deployed",
         ping_status=f"{passed_tests}/{total_tests} Tests Passed (100% Succeeded)",
         latency_ms=elapsed,
-        proof_message=f"Deployed in {elapsed}s. Deploy Ready: {deploy_ready}. {commit_message}"
+        proof_message=f"Deployed in {elapsed}s. Deploy Ready: {deploy_ready}. {commit_message} (Git commit: {git_commit_sha})"
     )
 
     return JsonResponse({
@@ -1719,6 +1748,10 @@ def api_commit_and_pipeline(request):
         'passed_tests': passed_tests,
         'total_tests': total_tests,
         'pass_rate_pct': round((passed_tests / total_tests) * 100.0, 1) if total_tests > 0 else 100.0,
+        'git_committed': git_committed,
+        'git_pushed': git_pushed,
+        'git_commit_sha': git_commit_sha,
+        'actions_url': "https://github.com/aryastark11/advnetman/actions",
         'verification_stdout': ver_proc.stdout,
         'message': f"Configuration successfully committed to {device_name}! CI/CD tests completed in {elapsed}s with {passed_tests}/{total_tests} PASS."
     })

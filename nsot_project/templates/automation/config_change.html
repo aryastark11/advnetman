@@ -93,9 +93,12 @@
     <span class="badge badge-router" style="padding: 8px 16px; font-size: 0.85rem;" id="badgeTargetDevice">
       <i class="fa-solid fa-server"></i> Target: R1
     </span>
-    <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; padding: 8px 16px; font-size: 0.85rem;">
+    <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; padding: 8px 16px; font-size: 0.85rem;" id="badgeGitCommit">
       <i class="fa-solid fa-code-commit"></i> Git Version Control Committed
     </span>
+    <a href="https://github.com/aryastark11/advnetman/actions" target="_blank" class="badge" style="background: #24292f; color: #ffffff; border: 1px solid #475569; padding: 8px 16px; font-size: 0.85rem; text-decoration: none;" id="badgeGitHubActions">
+      <i class="fa-brands fa-github"></i> View Running GitHub Actions Workflow <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i>
+    </a>
   </div>
 </div>
 
@@ -248,6 +251,10 @@ function commitAndDeploy() {
       document.getElementById('thumbsUpSummary').innerText = `All ${data.passed_tests}/${data.total_tests} Post-Deployment Health & Routing Verification Assertions PASSED (${data.pass_rate_pct}% Success).`;
       document.getElementById('badgeDeployTime').innerHTML = `<i class="fa-solid fa-clock"></i> Execution Time: ${data.elapsed_sec}s`;
       document.getElementById('badgeTargetDevice').innerHTML = `<i class="fa-solid fa-server"></i> Target: ${data.device}`;
+      if (data.git_commit_sha) {
+        document.getElementById('badgeGitCommit').innerHTML = `<i class="fa-solid fa-code-commit"></i> Git Commit: <code>${data.git_commit_sha}</code>`;
+        log.innerText += `\n[${new Date().toLocaleTimeString()}] ✅ Git commit created: ${data.git_commit_sha} and pushed to origin/main.\n[${new Date().toLocaleTimeString()}] 🚀 GitHub Actions workflow triggered automatically: ${data.actions_url}\n`;
+      }
       thumbsBanner.scrollIntoView({ behavior: 'smooth' });
     } else {
       miniStatus.innerHTML = `<span class="badge badge-offline"><i class="fa-solid fa-triangle-exclamation"></i> Warnings / Failed</span>`;
