@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 name: NetDevOps CI/CD Pipeline - Routers & Switches
 
 on:
@@ -60,9 +59,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # =========================================================================
-  # STAGE 1: STATIC LINTING, SCHEMA VALIDATION & SECRET SCANNING
-  # =========================================================================
   stage-1-lint-and-validate:
     name: "Stage 1: Linting & Quality Gate"
     runs-on: [self-hosted, linux]
@@ -79,9 +75,6 @@ jobs:
         run: |
           python3 scripts/validate_iac_syntax.py
 
-  # =========================================================================
-  # STAGE 2: CONFIGURATION COMPILATION & UNIFIED DIFF ENGINE
-  # =========================================================================
   stage-2-compile-and-diff:
     name: "Stage 2: Compile Configs & Generate Diffs"
     needs: stage-1-lint-and-validate
@@ -127,14 +120,10 @@ jobs:
           path: build/diff_report.md
           retention-days: 14
 
-  # =========================================================================
-  # STAGE 3: AUTOMATED SAFE DEPLOYMENT & ATOMIC COMMITS
-  # =========================================================================
   stage-3-deploy-configurations:
     name: "Stage 3: Deploy Configurations"
     needs: stage-2-compile-and-diff
     runs-on: [self-hosted, linux]
-    # Only enforce deployment on push to main or explicit manual dispatch
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode != 'check-only')
     steps:
       - name: Checkout Repository
@@ -154,22 +143,15 @@ jobs:
         run: |
           STAGGER="${{ github.event.inputs.stagger_delay || '1.0' }}"
           CMD="python3 scripts/deploy_device_configs.py --stagger $STAGGER"
-          
-          # Check if Pull Request or dry-run mode
           if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event.inputs.deploy_mode }}" = "dry-run" ]; then
             CMD="$CMD --dry-run"
           fi
-          
           if [ -n "${{ github.event.inputs.target_device }}" ]; then
             CMD="$CMD --device ${{ github.event.inputs.target_device }}"
           fi
-          
           echo "Executing Deployment: $CMD"
           eval $CMD
 
-  # =========================================================================
-  # STAGE 4: POST-DEPLOYMENT VERIFICATION & OBSERVABILITY HEALTH
-  # =========================================================================
   stage-4-verify-network-health:
     name: "Stage 4: Network Health & Observability Verification"
     needs: [stage-2-compile-and-diff, stage-3-deploy-configurations]
@@ -206,195 +188,3 @@ jobs:
             build/verification_report.md
             build/verification_results.json
           retention-days: 14
-=======
-   name: NetDevOps CI/CD Pipeline - Routers & Switches
-    
-    on:
-      push:
-        branches:
-          - main
-        paths:
-          - 'data_models/**'
-          - 'Jinja2_templates_Arista/**'
-          - 'Jinja2_templates_Cisco_NXOS/**'
-          - 'Jinja2_templates_Cisco_XRv9k/**'
-          - 'Jinja2_templates_SONiC/**'
-          - 'configs/**'
-          - 'golden_configs/**'
-          - 'ipam/**'
-          - 'ipam.csv'
-          - 'scripts/**'
-          - '.github/workflows/**'
-      pull_request:
-        branches:
-          - main
-        paths:
-          - 'data_models/**'
-          - 'Jinja2_templates_Arista/**'
-          - 'Jinja2_templates_Cisco_NXOS/**'
-          - 'Jinja2_templates_Cisco_XRv9k/**'
-          - 'Jinja2_templates_SONiC/**'
-          - 'configs/**'
-          - 'golden_configs/**'
-          - 'ipam/**'
-          - 'ipam.csv'
-          - 'scripts/**'
-          - '.github/workflows/**'
-      workflow_dispatch:
-        inputs:
-          target_device:
-            description: 'Target Device (Leave blank for ALL devices: R1-R5, S1-S4)'
-            required: false
-            default: ''
-          deploy_mode:
-            description: 'Deployment Execution Mode'
-            type: choice
-            options:
-              - 'enforce'
-              - 'dry-run'
-              - 'check-only'
-            default: 'enforce'
-          skip_tests:
-            description: 'Skip Post-Deployment Health Verification'
-            type: boolean
-            default: false
-          stagger_delay:
-            description: 'Stagger delay between devices (seconds)'
-            required: false
-            default: '1.0'
-    
-    concurrency:
-      group: network-deployment-${{ github.ref }}
-      cancel-in-progress: false
-    
-    jobs:
-      stage-1-lint-and-validate:
-        name: "Stage 1: Linting & Quality Gate"
-        runs-on: [self-hosted, linux]
-        steps:
-          - name: Checkout Repository
-            uses: actions/checkout@v4
-    
-          - name: Verify Python & Dependencies
-            run: |
-              python3 --version
-              python3 -m pip install -q pyyaml jinja2 hvac requests pyeapi
-    
-          - name: Run Static Schema, Template & Secret Scans
-            run: |
-              python3 scripts/validate_iac_syntax.py
-    
-      stage-2-compile-and-diff:
-        name: "Stage 2: Compile Configs & Generate Diffs"
-        needs: stage-1-lint-and-validate
-        runs-on: [self-hosted, linux]
-        steps:
-          - name: Checkout Repository
-            uses: actions/checkout@v4
-    
-          - name: Create Build Directory
-            run: mkdir -p build/candidate_configs
-    
-          - name: Compile Candidate Configurations & Compute Live Diffs
-            env:
-              VAULT_ADDR: ${{ secrets.VAULT_ADDR || 'https://127.0.0.1:8200' }}
-              VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID || '2b36e7e1-6f1e-4c31-f489-5295d98966f4' }}
-              VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID || '97df979f-4f4b-5549-e57c-6a18664aeb09' }}
-            run: |
-              CMD="python3 scripts/generate_and_diff_configs.py --markdown build/diff_report.md"
-              if [ -n "${{ github.event.inputs.target_device }}" ]; then
-                CMD="$CMD --device ${{ github.event.inputs.target_device }}"
-              fi
-              echo "Executing: $CMD"
-              eval $CMD
-    
-          - name: Publish Diff Report to GitHub Step Summary
-            if: always()
-            run: |
-              if [ -f "build/diff_report.md" ]; then
-                cat build/diff_report.md >> $GITHUB_STEP_SUMMARY
-              fi
-    
-          - name: Archive Candidate Configurations Artifacts
-            uses: actions/upload-artifact@v4
-            with:
-              name: candidate-configs
-              path: build/candidate_configs/
-              retention-days: 14
-    
-          - name: Archive Diff Report Artifact
-            uses: actions/upload-artifact@v4
-            with:
-              name: config-diff-report
-              path: build/diff_report.md
-              retention-days: 14
-    
-      stage-3-deploy-configurations:
-        name: "Stage 3: Deploy Configurations"
-        needs: stage-2-compile-and-diff
-        runs-on: [self-hosted, linux]
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode != 'check-only')
-        steps:
-          - name: Checkout Repository
-            uses: actions/checkout@v4
-    
-          - name: Download Candidate Configurations Artifact
-            uses: actions/download-artifact@v4
-            with:
-              name: candidate-configs
-              path: build/candidate_configs/
-    
-          - name: Execute Automated Configuration Deployment
-            env:
-              VAULT_ADDR: ${{ secrets.VAULT_ADDR || 'https://127.0.0.1:8200' }}
-              VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID || '2b36e7e1-6f1e-4c31-f489-5295d98966f4' }}
-              VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID || '97df979f-4f4b-5549-e57c-6a18664aeb09' }}
-            run: |
-              STAGGER="${{ github.event.inputs.stagger_delay || '1.0' }}"
-              CMD="python3 scripts/deploy_device_configs.py --stagger $STAGGER"
-              if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event.inputs.deploy_mode }}" = "dry-run" ]; then
-                CMD="$CMD --dry-run"
-              fi
-              if [ -n "${{ github.event.inputs.target_device }}" ]; then
-                CMD="$CMD --device ${{ github.event.inputs.target_device }}"
-              fi
-              echo "Executing Deployment: $CMD"
-              eval $CMD
-    
-      stage-4-verify-network-health:
-        name: "Stage 4: Network Health & Observability Verification"
-        needs: [stage-2-compile-and-diff, stage-3-deploy-configurations]
-        runs-on: [self-hosted, linux]
-        if: |
-          always() &&
-          needs.stage-2-compile-and-diff.result == 'success' &&
-          (needs.stage-3-deploy-configurations.result == 'success' || needs.stage-3-deploy-configurations.result == 'skipped') &&
-          github.event.inputs.skip_tests != 'true'
-        steps:
-          - name: Checkout Repository
-            uses: actions/checkout@v4
-    
-          - name: Create Build Directory
-            run: mkdir -p build
-    
-          - name: Run Comprehensive Verification Test Suite
-            run: |
-              python3 scripts/verify_network_health.py --markdown build/verification_report.md --json build/verification_results.json
-    
-          - name: Publish Test Report to GitHub Step Summary
-            if: always()
-            run: |
-              if [ -f "build/verification_report.md" ]; then
-                cat build/verification_report.md >> $GITHUB_STEP_SUMMARY
-              fi
-    
-          - name: Archive Verification Results Artifact
-            if: always()
-            uses: actions/upload-artifact@v4
-            with:
-              name: verification-test-results
-              path: |
-                build/verification_report.md
-                build/verification_results.json
-              retention-days: 14
->>>>>>> b76feee14469af79ac232175fe7b23721963496c
