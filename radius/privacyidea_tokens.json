@@ -1,0 +1,20 @@
+{
+  "operator": {
+    "realm": "operator-realm",
+    "password": "OperatorSecurePassword2026!",
+    "secret": "JBSWY3DPEHPK3PXP",
+    "description": "NMAS Operator Hardware/App TOTP Token"
+  },
+  "netops": {
+    "realm": "operator-realm",
+    "password": "OperatorSecurePassword2026!",
+    "secret": "JBSWY3DPEHPK3PXP",
+    "description": "NMAS Netops Hardware/App TOTP Token"
+  },
+  "admin": {
+    "realm": "admin-realm",
+    "password": "AdminMasterPassword2026!",
+    "secret": "JBSWY3DPEHPK3PXQ",
+    "description": "NMAS Admin Master TOTP Token"
+  }
+}

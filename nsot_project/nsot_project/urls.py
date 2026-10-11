@@ -21,6 +21,16 @@ urlpatterns = [
     path('maintenance/', views.maintenance_view, name='maintenance'),
     path('api/maintenance/action/', views.maintenance_action_api, name='maintenance_action_api'),
     path('api/maintenance/status/', views.maintenance_status_api, name='maintenance_status_api'),
+    path('cicd/', views.cicd_view, name='cicd_pipeline'),
+    path('api/cicd/run/', views.api_run_cicd, name='api_run_cicd'),
+    path('api/cicd/golden-audit/', views.api_golden_audit, name='api_golden_audit'),
+    path('api/cicd/telemetry/', views.api_telemetry, name='api_telemetry'),
+    path('api/cicd/troubleshoot/', views.api_troubleshoot, name='api_troubleshoot'),
+    path('console/', views.device_console_view, name='device_console'),
+    path('device/<int:device_id>/console/', views.device_console_view, name='device_console_specific'),
+    path('config/change/', views.config_change_view, name='config_change'),
+    path('api/device/exec/', views.api_device_exec_cmd, name='api_device_exec_cmd'),
+    path('api/cicd/commit-change/', views.api_commit_and_pipeline, name='api_commit_and_pipeline'),
 ]
 
 if settings.DEBUG:

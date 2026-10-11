@@ -27,10 +27,6 @@
           <select id="device_type" name="device_type" class="form-control">
             <option value="router" {% if device.device_type == 'router' %}selected{% endif %}>Router</option>
             <option value="switch" {% if device.device_type == 'switch' %}selected{% endif %}>Switch</option>
-            <option value="host" {% if device.device_type == 'host' %}selected{% endif %}>Host</option>
-            <option value="nmas" {% if device.device_type == 'nmas' %}selected{% endif %}>NMAS Station</option>
-            <option value="server" {% if device.device_type == 'server' %}selected{% endif %}>Internet Server</option>
-            <option value="backup" {% if device.device_type == 'backup' %}selected{% endif %}>Backup Node</option>
           </select>
         </div>
 

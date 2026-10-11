@@ -76,12 +76,9 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; gap: 8px; align-items: center;">
       <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">FILTER TYPE:</span>
-      <a href="?type=" class="btn btn-sm {% if current_type == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+      <a href="?type=" class="btn btn-sm {% if current_type == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All (9)</a>
       <a href="?type=router" class="btn btn-sm {% if current_type == 'router' %}btn-primary{% else %}btn-secondary{% endif %}">Routers (5)</a>
       <a href="?type=switch" class="btn btn-sm {% if current_type == 'switch' %}btn-primary{% else %}btn-secondary{% endif %}">Switches (4)</a>
-      <a href="?type=host" class="btn btn-sm {% if current_type == 'host' %}btn-primary{% else %}btn-secondary{% endif %}">Hosts (4)</a>
-      <a href="?type=nmas" class="btn btn-sm {% if current_type == 'nmas' %}btn-primary{% else %}btn-secondary{% endif %}">NMAS</a>
-      <a href="?type=server" class="btn btn-sm {% if current_type == 'server' %}btn-primary{% else %}btn-secondary{% endif %}">Servers</a>
     </div>
 
     <form method="get" style="display: flex; gap: 8px;">
@@ -154,6 +151,9 @@
           </td>
           <td>
             <div style="display: flex; gap: 6px;">
+              <a href="{% url 'device_console_specific' dev.id %}" class="btn btn-secondary btn-sm" style="color: #38bdf8;" title="Open live Web CLI Terminal">
+                <i class="fa-solid fa-terminal"></i> CLI
+              </a>
               <a href="{% url 'pull_device_config' dev.id %}" class="btn btn-primary btn-sm" title="Pull live running config from device">
                 <i class="fa-solid fa-cloud-arrow-down"></i> Pull
               </a>

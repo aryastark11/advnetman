@@ -1,0 +1,268 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Configuration Change Studio &amp; CI/CD Pipeline - NSoT{% endblock %}
+
+{% block extra_css %}
+<style>
+  .change-studio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 992px) {
+    .change-studio-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .thumbs-up-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15));
+    border: 2px solid #10b981;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+    animation: popIn 0.3s ease-out;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .thumbs-icon {
+    font-size: 3.5rem;
+    color: #10b981;
+    margin-bottom: 12px;
+    display: inline-block;
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6));
+  }
+  .snippet-btn {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .snippet-btn:hover {
+    color: #38bdf8;
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+      <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981;">
+        <i class="fa-solid fa-code-commit"></i> IaC Change Studio
+      </span>
+      <span class="badge badge-online">Git Version Control &amp; Automated Testing</span>
+    </div>
+    <h1 style="font-size: 1.5rem; font-weight: 700; color: #ffffff;">Network Configuration Change Studio</h1>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{% url 'device_console' %}" class="btn btn-secondary">
+      <i class="fa-solid fa-terminal"></i> <span>Web Console</span>
+    </a>
+    <a href="{% url 'cicd_pipeline' %}" class="btn btn-secondary">
+      <i class="fa-solid fa-code-branch"></i> <span>CI/CD Pipeline</span>
+    </a>
+  </div>
+</div>
+
+<!-- Thumbs Up Success Banner (Initially Hidden) -->
+<div id="thumbsUpBanner" class="thumbs-up-card" style="display: none;">
+  <div class="thumbs-icon">
+    <i class="fa-solid fa-thumbs-up"></i>
+  </div>
+  <h2 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-bottom: 8px;">
+    CONFIGURATION VERIFIED &mdash; DEPLOY READY!
+  </h2>
+  <p style="color: #34d399; font-size: 1.05rem; font-weight: 600; margin-bottom: 16px;" id="thumbsUpSummary">
+    All 25/25 Post-Deployment Health &amp; Routing Verification Assertions PASSED (100.0% Success).
+  </p>
+  <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+    <span class="badge badge-online" style="padding: 8px 16px; font-size: 0.85rem;" id="badgeDeployTime">
+      <i class="fa-solid fa-clock"></i> Execution Time: 12.4s
+    </span>
+    <span class="badge badge-router" style="padding: 8px 16px; font-size: 0.85rem;" id="badgeTargetDevice">
+      <i class="fa-solid fa-server"></i> Target: R1
+    </span>
+    <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; padding: 8px 16px; font-size: 0.85rem;">
+      <i class="fa-solid fa-code-commit"></i> Git Version Control Committed
+    </span>
+  </div>
+</div>
+
+<div class="change-studio-grid">
+  <!-- Left Box: Configuration Input & Editor -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-pen-to-square" style="color: #38bdf8;"></i>
+        <span>Compose Configuration Change</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Target Device Selector -->
+      <div class="form-group">
+        <label for="targetDevice"><i class="fa-solid fa-server"></i> Select Target Router / Switch:</label>
+        <select id="targetDevice" class="form-control" onchange="onDeviceSelect()">
+          {% for dev in devices %}
+            <option value="{{ dev.name }}" data-ip="{{ dev.mgmt_ip }}">{{ dev.name|upper }} ({{ dev.mgmt_ip }}) &mdash; {{ dev.get_device_type_display }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Quick Template Snippets -->
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 0.78rem; color: var(--text-muted);">Quick Configuration Snippets:</label>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+          <button class="snippet-btn" onclick="insertSnippet('interface')">+ Interface Description</button>
+          <button class="snippet-btn" onclick="insertSnippet('loopback')">+ Loopback Interface</button>
+          <button class="snippet-btn" onclick="insertSnippet('ospf')">+ OSPF Area 0 Network</button>
+          <button class="snippet-btn" onclick="insertSnippet('vlan')">+ VLAN Configuration</button>
+          <button class="snippet-btn" onclick="insertSnippet('banner')">+ Banner MOTD</button>
+        </div>
+      </div>
+
+      <!-- Configuration Commands Box -->
+      <div class="form-group">
+        <label for="configCommands"><i class="fa-solid fa-terminal"></i> Enter EOS Configuration Commands (Hierarchical):</label>
+        <textarea id="configCommands" class="form-control" rows="10" placeholder="e.g.&#10;interface Ethernet1.99&#10;   description Test-NSoT-CI-CD&#10;   ip address 10.99.99.1/24&#10;!&#10;router ospf 1&#10;   network 10.99.99.0/24 area 0.0.0.0">interface Ethernet1
+   description Core-Uplink-Verified-by-NSoT
+!
+router ospf 1
+   router-id 10.0.0.1</textarea>
+      </div>
+
+      <!-- Commit Message -->
+      <div class="form-group">
+        <label for="commitMessage"><i class="fa-solid fa-message"></i> Git Commit / Change Summary:</label>
+        <input type="text" id="commitMessage" class="form-control" value="feat(r1): update core interface description and OSPF parameters via NSoT">
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button onclick="commitAndDeploy()" class="btn btn-primary" id="btnCommitDeploy" style="flex: 1; padding: 12px; font-weight: 700;">
+          <i class="fa-solid fa-rocket"></i> <span>Commit &amp; Auto-Trigger CI/CD</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Box: Live Pipeline Runner & Verification Terminal -->
+  <div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="card-title">
+        <i class="fa-solid fa-square-check" style="color: #10b981;"></i>
+        <span>Automated Pipeline &amp; Verification Stream</span>
+      </div>
+      <div id="pipelineMiniStatus">
+        <span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Ready</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="terminal-box" id="pipelineStreamLog" style="height: 480px; max-height: 480px;">
+Ready for configuration deployment.
+Click "Commit &amp; Auto-Trigger CI/CD" to push changes to the selected device and run the 25-point automated verification suite.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function onDeviceSelect() {
+  const sel = document.getElementById('targetDevice');
+  const dev = sel.value;
+  document.getElementById('commitMessage').value = `feat(${dev.toLowerCase()}): update configuration parameters via NSoT Studio`;
+}
+
+function insertSnippet(type) {
+  const area = document.getElementById('configCommands');
+  const dev = document.getElementById('targetDevice').value;
+
+  if (type === 'interface') {
+    area.value += `\ninterface Ethernet1\n   description Production-Link-Verified-via-NSoT\n!`;
+  } else if (type === 'loopback') {
+    area.value += `\ninterface Loopback99\n   description Test-Loopback-NSoT\n   ip address 10.99.99.1/32\n!`;
+  } else if (type === 'ospf') {
+    area.value += `\nrouter ospf 1\n   network 10.0.0.0/24 area 0.0.0.0\n!`;
+  } else if (type === 'vlan') {
+    area.value += `\nvlan 99\n   name TEST_AUTOMATION_VLAN\n!`;
+  } else if (type === 'banner') {
+    area.value += `\nbanner motd\n=========================================\n  ROBOCONTROL NETWORKS MANAGED ROUTER (${dev})\n=========================================\nEOF\n!`;
+  }
+}
+
+function commitAndDeploy() {
+  const dev = document.getElementById('targetDevice').value;
+  const cmds = document.getElementById('configCommands').value.trim();
+  const msg = document.getElementById('commitMessage').value.trim();
+  const btn = document.getElementById('btnCommitDeploy');
+  const log = document.getElementById('pipelineStreamLog');
+  const miniStatus = document.getElementById('pipelineMiniStatus');
+  const thumbsBanner = document.getElementById('thumbsUpBanner');
+
+  if (!cmds) {
+    alert('Please enter configuration commands.');
+    return;
+  }
+
+  thumbsBanner.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deploying &amp; Testing...`;
+  miniStatus.innerHTML = `<span class="badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8;"><i class="fa-solid fa-spinner fa-spin"></i> Testing (${dev})...</span>`;
+  
+  log.innerText = `[${new Date().toLocaleTimeString()}] Pushing configuration change to ${dev} via Arista eAPI...\n`;
+  log.innerText += `[${new Date().toLocaleTimeString()}] Commands:\n${cmds}\n\n`;
+  log.innerText += `[${new Date().toLocaleTimeString()}] Triggering Stage 4: 25-Point Network Health Verification Suite...\n`;
+
+  const formData = new FormData();
+  formData.append('device', dev);
+  formData.append('config_commands', cmds);
+  formData.append('commit_message', msg);
+
+  fetch("{% url 'api_commit_and_pipeline' %}", {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-rocket"></i> <span>Commit &amp; Auto-Trigger CI/CD</span>`;
+
+    if (data.status === 'success' && data.deploy_ready) {
+      miniStatus.innerHTML = `<span class="badge badge-online"><i class="fa-solid fa-check"></i> Passed (${data.elapsed_sec}s)</span>`;
+      log.innerText += `\n[${new Date().toLocaleTimeString()}] ${data.message}\n\n`;
+      log.innerText += data.verification_stdout;
+
+      // Show Thumbs Up Banner
+      thumbsBanner.style.display = 'block';
+      document.getElementById('thumbsUpSummary').innerText = `All ${data.passed_tests}/${data.total_tests} Post-Deployment Health & Routing Verification Assertions PASSED (${data.pass_rate_pct}% Success).`;
+      document.getElementById('badgeDeployTime').innerHTML = `<i class="fa-solid fa-clock"></i> Execution Time: ${data.elapsed_sec}s`;
+      document.getElementById('badgeTargetDevice').innerHTML = `<i class="fa-solid fa-server"></i> Target: ${data.device}`;
+      thumbsBanner.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      miniStatus.innerHTML = `<span class="badge badge-offline"><i class="fa-solid fa-triangle-exclamation"></i> Warnings / Failed</span>`;
+      log.innerText += `\n% Error during deployment or verification: ${data.message}\n`;
+      if (data.verification_stdout) {
+        log.innerText += '\n' + data.verification_stdout;
+      }
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-rocket"></i> <span>Commit &amp; Auto-Trigger CI/CD</span>`;
+    miniStatus.innerHTML = `<span class="badge badge-offline">Error</span>`;
+    log.innerText += `\n% Network / execution failure: ${err}\n`;
+  });
+}
+</script>
+{% endblock %}

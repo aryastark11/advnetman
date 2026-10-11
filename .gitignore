@@ -10,3 +10,13 @@ media/uploads/temp/
 *.tar.xz
 cEOS-lab-4.33.10M/
 clab-lab1/
+# Build artifacts and reports
+build/
+# Vault storage, keys, and secrets
+vault/data/
+vault/audit/
+vault/certs/*.key
+vault/certs/*.csr
+.vault_keys.json
+secrets/
+*.secret

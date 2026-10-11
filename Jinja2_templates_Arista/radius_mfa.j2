@@ -1,0 +1,17 @@
+! ======================================================================
+! Arista EOS 2FA Authentication: FreeRADIUS + PrivacyIDEA TOTP
+! Maintains 'local' fallback and isolates eAPI command-api for automation
+! ======================================================================
+radius-server host {{ radius_server_ip }} key 0 {{ radius_key | default("RadiusSecret2026!") }}
+radius-server timeout 3
+radius-server retransmit 2
+!
+aaa group server radius RADIUS_SERVERS
+   server {{ radius_server_ip }}
+!
+aaa authentication login default group radius local
+aaa authentication login command-api local
+aaa authentication login console local
+!
+username netops privilege 15 secret {{ netops_local_password | default("LocalNetopsPass2026!") }}
+!

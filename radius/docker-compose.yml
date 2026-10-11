@@ -1,0 +1,26 @@
+services:
+  privacyidea:
+    image: python:3.12-slim
+    container_name: nmas-privacyidea
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: python3 /app/privacyidea_service.py
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  freeradius:
+    image: freeradius/freeradius-server:latest
+    container_name: nmas-freeradius
+    restart: unless-stopped
+    depends_on:
+      - privacyidea
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    volumes:
+      - ./config/clients.conf:/etc/freeradius/clients.conf:ro
+      - ./privacyidea_radius.pm:/etc/freeradius/privacyidea_radius.pm:ro

@@ -1,0 +1,353 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}Interactive Device Web Console - NSoT{% endblock %}
+
+{% block extra_css %}
+<style>
+  .console-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .console-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  .device-list-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    max-height: 720px;
+    overflow-y: auto;
+  }
+  .device-item-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-main);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+    text-decoration: none;
+  }
+  .device-item-btn:hover {
+    background: rgba(30, 41, 59, 0.8);
+    color: #38bdf8;
+  }
+  .device-item-btn.active {
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.4);
+    color: #38bdf8;
+    font-weight: 600;
+  }
+  .terminal-window {
+    background: #050811;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    height: 640px;
+  }
+  .terminal-topbar {
+    background: #0d1527;
+    border-bottom: 1px solid #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px 10px 0 0;
+  }
+  .terminal-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .terminal-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+  }
+  .terminal-dot.red { background: #ef4444; }
+  .terminal-dot.yellow { background: #f59e0b; }
+  .terminal-dot.green { background: #10b981; }
+
+  .terminal-screen {
+    flex: 1;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.84rem;
+    color: #e2e8f0;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .terminal-input-bar {
+    background: #090e1a;
+    border-top: 1px solid #1e293b;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 0 0 10px 10px;
+  }
+  .terminal-prompt {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #10b981;
+    font-size: 0.9rem;
+    user-select: none;
+  }
+  .terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .quick-chip {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quick-chip:hover {
+    color: #38bdf8;
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+      <span class="badge badge-router"><i class="fa-solid fa-terminal"></i> Web CLI Console</span>
+      <span class="badge badge-online">eAPI JSON-RPC &amp; Docker Exec</span>
+    </div>
+    <h1 style="font-size: 1.5rem; font-weight: 700; color: #ffffff;">Interactive Device CLI &amp; Web Login Console</h1>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{% url 'config_change' %}" class="btn btn-primary">
+      <i class="fa-solid fa-pen-to-square"></i> <span>Config Change Studio</span>
+    </a>
+    <a href="{% url 'cicd_pipeline' %}" class="btn btn-secondary">
+      <i class="fa-solid fa-code-branch"></i> <span>CI/CD Pipeline</span>
+    </a>
+  </div>
+</div>
+
+<div class="console-layout">
+  <!-- Left Column: Device Navigation List -->
+  <div class="device-list-card">
+    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+      <i class="fa-solid fa-network-wired"></i> Select Target Device
+    </div>
+
+    <!-- Routers -->
+    <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #38bdf8; margin: 8px 4px;">Routers</div>
+    {% for dev in devices %}
+      {% if dev.device_type == 'router' %}
+      <button onclick="selectDevice('{{ dev.name }}', '{{ dev.mgmt_ip }}', '{{ dev.device_type }}')" class="device-item-btn {% if selected_device.id == dev.id %}active{% endif %}" id="devBtn_{{ dev.name }}">
+        <div>
+          <i class="fa-solid fa-globe" style="margin-right: 6px; color: #60a5fa;"></i>
+          <strong>{{ dev.name|upper }}</strong>
+        </div>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">{{ dev.mgmt_ip|default:"--" }}</span>
+      </button>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Switches -->
+    <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #34d399; margin: 14px 4px 8px 4px;">Switches</div>
+    {% for dev in devices %}
+      {% if dev.device_type == 'switch' %}
+      <button onclick="selectDevice('{{ dev.name }}', '{{ dev.mgmt_ip }}', '{{ dev.device_type }}')" class="device-item-btn {% if selected_device.id == dev.id %}active{% endif %}" id="devBtn_{{ dev.name }}">
+        <div>
+          <i class="fa-solid fa-shuffle" style="margin-right: 6px; color: #34d399;"></i>
+          <strong>{{ dev.name|upper }}</strong>
+        </div>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">{{ dev.mgmt_ip|default:"--" }}</span>
+      </button>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- Right Column: Interactive Terminal Window -->
+  <div>
+    <div class="terminal-window">
+      <!-- Top Bar -->
+      <div class="terminal-topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="terminal-dots">
+            <div class="terminal-dot red"></div>
+            <div class="terminal-dot yellow"></div>
+            <div class="terminal-dot green"></div>
+          </div>
+          <span style="font-size: 0.85rem; font-weight: 600; color: #ffffff;" id="terminalHeaderTitle">
+            <i class="fa-solid fa-terminal" style="color: #38bdf8;"></i> <span id="currentDeviceName">{{ selected_device.name|default:"R1"|upper }}</span> &mdash; <code id="currentDeviceIp" style="color: #38bdf8; font-size: 0.8rem;">{{ selected_device.mgmt_ip|default:"172.20.20.11" }}</code>
+          </span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="clearTerminal()" title="Clear screen">
+            <i class="fa-solid fa-eraser"></i> Clear
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="copyTerminal()" title="Copy output">
+            <i class="fa-solid fa-copy"></i> Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Commands Toolbar -->
+      <div style="background: #090e1a; padding: 8px 16px; border-bottom: 1px solid #1e293b; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Quick Commands:</span>
+        <button class="quick-chip" onclick="executeQuickCmd('show version')">show version</button>
+        <button class="quick-chip" onclick="executeQuickCmd('show running-config')">show running-config</button>
+        <button class="quick-chip" onclick="executeQuickCmd('show ip route')">show ip route</button>
+        <button class="quick-chip" onclick="executeQuickCmd('show ip ospf neighbor')">show ip ospf neighbor</button>
+        <button class="quick-chip" onclick="executeQuickCmd('show vrrp brief')">show vrrp brief</button>
+        <button class="quick-chip" onclick="executeQuickCmd('show ip bgp summary')">show ip bgp summary</button>
+        <button class="quick-chip" onclick="executeQuickCmd('show processes top once')">show processes top</button>
+      </div>
+
+      <!-- Terminal Output Screen -->
+      <div class="terminal-screen" id="terminalScreen">
+======================================================================
+  ROBOCONTROL NETWORKS &mdash; INTERACTIVE DEVICE WEB TERMINAL
+  Target Device: <span id="motdDeviceName">{{ selected_device.name|default:"R1"|upper }}</span> | Management IP: <span id="motdMgmtIp">{{ selected_device.mgmt_ip|default:"172.20.20.11" }}</span>
+  Connected via: Arista eAPI Command-API
+======================================================================
+
+Type any CLI command below (e.g. `show version`, `show ip route`) and press Enter.
+</div>
+
+      <!-- Input Bar -->
+      <div class="terminal-input-bar">
+        <span class="terminal-prompt" id="terminalPromptStr">{{ selected_device.name|default:"device"|lower }}#</span>
+        <input type="text" id="terminalInput" class="terminal-input" placeholder="Enter CLI command here..." autocomplete="off" spellcheck="false">
+        <button onclick="submitCommand()" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDevice = "{{ selected_device.name|default:'R1' }}";
+let currentPrompt = "{{ selected_device.name|default:'device'|lower }}#";
+let cmdHistory = [];
+let historyIndex = -1;
+
+function selectDevice(name, ip, type) {
+  currentDevice = name;
+  currentPrompt = `${name.toLowerCase()}#`;
+
+  document.querySelectorAll('.device-item-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById(`devBtn_${name}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  document.getElementById('currentDeviceName').innerText = name.toUpperCase();
+  document.getElementById('currentDeviceIp').innerText = ip;
+  document.getElementById('motdDeviceName').innerText = name.toUpperCase();
+  document.getElementById('motdMgmtIp').innerText = ip;
+  document.getElementById('terminalPromptStr').innerText = currentPrompt;
+
+  appendToTerminal(`\n[+] Switched active session to device: ${name.toUpperCase()} (${ip})\n`);
+  document.getElementById('terminalInput').focus();
+}
+
+function appendToTerminal(text) {
+  const screen = document.getElementById('terminalScreen');
+  screen.innerText += text;
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function clearTerminal() {
+  document.getElementById('terminalScreen').innerText = `Session cleared. Active device: ${currentDevice.toUpperCase()}\n`;
+}
+
+function copyTerminal() {
+  navigator.clipboard.writeText(document.getElementById('terminalScreen').innerText);
+  alert('Terminal log copied to clipboard!');
+}
+
+function executeQuickCmd(cmd) {
+  document.getElementById('terminalInput').value = cmd;
+  submitCommand();
+}
+
+function submitCommand() {
+  const input = document.getElementById('terminalInput');
+  const cmd = input.value.trim();
+  if (!cmd) return;
+
+  cmdHistory.push(cmd);
+  historyIndex = cmdHistory.length;
+
+  appendToTerminal(`\n${currentPrompt} ${cmd}\n`);
+  input.value = '';
+
+  const formData = new FormData();
+  formData.append('device', currentDevice);
+  formData.append('command', cmd);
+
+  fetch("{% url 'api_device_exec_cmd' %}", {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'success') {
+      appendToTerminal(data.output + '\n');
+    } else {
+      appendToTerminal(`% Error: ${data.output || data.message}\n`);
+    }
+  })
+  .catch(err => {
+    appendToTerminal(`% Connection error: ${err}\n`);
+  });
+}
+
+// Enter Key and History Navigation
+document.getElementById('terminalInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    submitCommand();
+  } else if (e.key === 'ArrowUp') {
+    if (historyIndex > 0) {
+      historyIndex--;
+      e.target.value = cmdHistory[historyIndex];
+    }
+    e.preventDefault();
+  } else if (e.key === 'ArrowDown') {
+    if (historyIndex < cmdHistory.length - 1) {
+      historyIndex++;
+      e.target.value = cmdHistory[historyIndex];
+    } else {
+      historyIndex = cmdHistory.length;
+      e.target.value = '';
+    }
+    e.preventDefault();
+  }
+});
+</script>
+{% endblock %}

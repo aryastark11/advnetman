@@ -1,0 +1,18 @@
+services:
+  vault:
+    image: hashicorp/vault:1.16
+    container_name: nmas-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: "https://127.0.0.1:8200"
+      VAULT_CACERT: "/vault/certs/ca.crt"
+    volumes:
+      - ./config:/vault/config
+      - ./data:/vault/data
+      - ./certs:/vault/certs
+      - ./audit:/vault/logs
+    cap_add:
+      - IPC_LOCK
+    command: server

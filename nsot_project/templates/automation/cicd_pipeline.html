@@ -1,0 +1,989 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}NetDevOps CI/CD, Golden Baselines & AI Troubleshooting - RoboControl NSoT{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Header Hero */
+  .cicd-hero {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.1));
+    border: 1px solid rgba(14, 165, 233, 0.35);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+
+  /* Nav Tabs */
+  .tab-nav {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tab-btn:hover {
+    color: #ffffff;
+    background: rgba(30, 41, 59, 0.6);
+  }
+  .tab-btn.active {
+    color: #38bdf8;
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    border-bottom: 2px solid #0284c7;
+  }
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active {
+    display: block;
+    animation: fadeIn 0.25s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stage Cards (Tab 4) */
+  .stage-track {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stage-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+  .stage-card:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px);
+  }
+  .stage-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #0284c7;
+  }
+  .stage-card.success::before { background: #10b981; }
+  .stage-num {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #38bdf8;
+    margin-bottom: 4px;
+  }
+  .stage-title {
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+  .stage-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* Metric Card */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .metric-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  /* Telemetry Grid & Resource Bars */
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .device-telemetry-card {
+    background: #0d1527;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .progress-bar-container {
+    background: #1e293b;
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+    margin: 8px 0 12px 0;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.4s ease;
+  }
+  .progress-bar-normal { background: linear-gradient(90deg, #10b981, #059669); }
+  .progress-bar-elevated { background: linear-gradient(90deg, #f59e0b, #d97706); }
+  .progress-bar-high { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+  /* Troubleshooting Console */
+  .troubleshoot-hero {
+    background: #090e1a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .prompt-input-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .prompt-input {
+    flex: 1;
+    background: #0d1527;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .prompt-input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+  }
+  .preset-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .preset-pill {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .preset-pill:hover {
+    color: #38bdf8;
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+  }
+
+  /* Diff Box */
+  .diff-box {
+    background: #050811;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    max-height: 480px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .terminal-box {
+    background: #050811;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: #38bdf8;
+    min-height: 220px;
+    max-height: 450px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* Buttons */
+  .btn-run-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Header Hero -->
+<div class="cicd-hero">
+  <div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+      <span class="badge" style="background: rgba(14, 165, 233, 0.25); color: #38bdf8; border: 1px solid #0284c7;">NetDevOps CI/CD &amp; Observability</span>
+      <span class="badge badge-online"><i class="fa-solid fa-circle-check"></i> Live IaC Engine Active</span>
+    </div>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">NetDevOps Automation &amp; Diagnostics Suite</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+      Continuous integration, golden configuration drift audits, live CPU / latency telemetry, and AI automated troubleshooting.
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <button onclick="switchTab('tab-pipeline')" class="btn-run-action" style="background: #24292f; color: #ffffff !important; border: 1px solid #475569; cursor: pointer;">
+      <i class="fa-brands fa-github"></i> <span>GitHub Actions Workflow</span> <span class="badge badge-online" style="font-size: 0.72rem; margin-left: 6px; padding: 2px 6px;"><i class="fa-solid fa-circle-check"></i> Runner Online</span>
+    </button>
+  </div>
+</div>
+
+<!-- Main Tab Navigation -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('tab-golden')">
+    <i class="fa-solid fa-code-compare"></i> <span>Golden Baseline &amp; State Drift</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-telemetry')">
+    <i class="fa-solid fa-chart-line"></i> <span>Live Telemetry &amp; CPU Usage</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-troubleshoot')">
+    <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> <span>AI Troubleshooting Console</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-pipeline')" id="tabBtnPipeline">
+    <i class="fa-brands fa-github" style="color: #38bdf8;"></i> <span>GitHub Actions &amp; Pipeline Runner</span>
+  </button>
+</div>
+
+<!-- ===================================================================== -->
+<!-- TAB 1: GOLDEN BASELINE & STATE DRIFT COMPARISON                       -->
+<!-- ===================================================================== -->
+<div id="tab-golden" class="tab-content active">
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="font-size: 1.1rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i> Golden Baseline &amp; Drift Auditor
+        </h2>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Compares live Arista eAPI running state against <code>golden_configs/</code> baselines</div>
+      </div>
+      <div>
+        <button onclick="runGoldenAudit()" class="btn-run-action btn-primary" id="btnRunAudit">
+          <i class="fa-solid fa-arrows-rotate"></i> <span>Run Full Baseline Audit</span>
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- High Level Fleet Compliance Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Fleet Compliance Score</div>
+          <div class="metric-value" id="metricFleetCompliance">
+            <span style="color: #10b981;">94.8%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Audited Devices</div>
+          <div class="metric-value" id="metricAuditedDevices">
+            <span>9 / 9 Online</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Monitored Routes</div>
+          <div class="metric-value" id="metricTotalRoutes">
+            <span style="color: #38bdf8;">142 Routes</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Routing Adjacencies</div>
+          <div class="metric-value" id="metricAdjacencies">
+            <span style="color: #a855f7;">BGP &amp; OSPF Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Device Summary Table -->
+      <div class="table-responsive" style="margin-bottom: 24px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Device</th>
+              <th>Mgmt IP</th>
+              <th>Status</th>
+              <th>Config Compliance</th>
+              <th>Diff Lines</th>
+              <th>Active Routes</th>
+              <th>Neighbors (OSPF / BGP)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="goldenSummaryTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading Golden Baseline Audit Data...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Device Detailed Diff Inspector Drawer -->
+      <div id="deviceDiffDetailCard" style="display: none; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 id="diffDetailTitle" style="font-size: 1rem; font-weight: 600; color: #ffffff;"></h3>
+          <span id="diffDetailBadge"></span>
+        </div>
+        <div class="diff-box" id="diffDetailContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- TAB 2: LIVE TELEMETRY, CPU USAGE & IP CONNECTIVITY                    -->
+<!-- ===================================================================== -->
+<div id="tab-telemetry" class="tab-content">
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="font-size: 1.1rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-microchip" style="color: #38bdf8;"></i> Device CPU &amp; Resource Telemetry
+        </h2>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Real-time CPU utilization, memory allocation, uptime, and system status across all routers and switches</div>
+      </div>
+      <div>
+        <button onclick="fetchTelemetry()" class="btn-run-action btn-primary" id="btnRefreshTelemetry">
+          <i class="fa-solid fa-rotate"></i> <span>Refresh Telemetry</span>
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- 9 Device Telemetry Grid -->
+      <div class="telemetry-grid" id="deviceTelemetryGrid">
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 24px;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Fetching live CPU and memory metrics from Arista eAPI...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live IP Connectivity & Latency Matrix -->
+  <div class="card">
+    <div class="card-header">
+      <h2 style="font-size: 1.05rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-network-wired" style="color: #10b981;"></i> Live Data Plane IP Connectivity Matrix (ICMP &amp; HTTP)
+      </h2>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Source Host</th>
+              <th>Target Destination</th>
+              <th>Probe Type</th>
+              <th>Status</th>
+              <th>Packet Loss</th>
+              <th>Latency / Result</th>
+            </tr>
+          </thead>
+          <tbody id="connectivityTableBody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Executing live ICMP &amp; HTTP data plane validation probes...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- TAB 3: AI AUTOMATED TROUBLESHOOTING CONSOLE                           -->
+<!-- ===================================================================== -->
+<div id="tab-troubleshoot" class="tab-content">
+  <div class="troubleshoot-hero">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+      <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7;">
+        <i class="fa-solid fa-brain"></i> AI Network Diagnostic Agent
+      </span>
+      <span class="badge badge-online">eAPI &amp; Container Engine Active</span>
+    </div>
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Automated Diagnostic &amp; Root-Cause Assistant</h2>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">
+      Enter a troubleshooting prompt in natural language. The automated engine will parse your intent, query live router eAPI states and host containers, diagnose root causes, and provide actionable recommendations.
+    </p>
+
+    <!-- Prompt Input Form -->
+    <div class="prompt-input-wrapper">
+      <input type="text" id="troubleshootPrompt" class="prompt-input" placeholder="e.g. Why is H2 unable to reach Web Server? Check BGP peerings on R5 and OSPF on R1" value="Perform full network health triage and verify BGP/OSPF convergence">
+      <button onclick="runTroubleshoot()" class="btn-run-action btn-primary" id="btnTroubleshoot" style="padding: 12px 24px;">
+        <i class="fa-solid fa-play"></i> <span>Diagnose</span>
+      </button>
+    </div>
+
+    <!-- Quick Presets -->
+    <div class="preset-pills">
+      <span style="font-size: 0.78rem; color: var(--text-muted); align-self: center;">Quick Presets:</span>
+      <button class="preset-pill" onclick="setPromptAndRun('Perform complete network health triage across all routers and switches')">🩺 Full Network Triage</button>
+      <button class="preset-pill" onclick="setPromptAndRun('Diagnose BGP peering status on R5, R3, and R4 for AS 65005 and AS 65001')">🌐 BGP &amp; Core Routing</button>
+      <button class="preset-pill" onclick="setPromptAndRun('Check VRRP master standby state on R1 and R2 and default gateway redundancy')">🔀 VRRP &amp; Gateway Redundancy</button>
+      <button class="preset-pill" onclick="setPromptAndRun('Investigate high CPU usage and top process threads across routers')">💻 CPU Spikes &amp; Top Processes</button>
+      <button class="preset-pill" onclick="setPromptAndRun('Verify DHCP server pool leases on R2 and Inter-VLAN routing for VLAN 10 and 20')">📡 DHCP Leases &amp; Inter-VLAN</button>
+    </div>
+  </div>
+
+  <!-- Troubleshooting Output Card -->
+  <div class="card" id="troubleshootResultCard" style="display: none;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 1.1rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-clipboard-check" style="color: #38bdf8;"></i> Diagnostic Investigation Findings
+      </h3>
+      <div id="troubleshootStatusBadge"></div>
+    </div>
+    <div class="card-body">
+      <!-- Findings -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 0.88rem; font-weight: 600; text-transform: uppercase; color: #38bdf8; margin-bottom: 10px;">
+          <i class="fa-solid fa-magnifying-glass"></i> Key Findings &amp; Live Observations
+        </h4>
+        <div id="troubleshootFindingsList" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem;"></div>
+      </div>
+
+      <!-- Recommendations -->
+      <div style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.4); border-left: 3px solid #10b981; padding: 14px 18px; border-radius: 6px;">
+        <h4 style="font-size: 0.88rem; font-weight: 600; text-transform: uppercase; color: #10b981; margin-bottom: 8px;">
+          <i class="fa-solid fa-lightbulb"></i> Root Cause &amp; Recommended Action
+        </h4>
+        <div id="troubleshootRecommendationsList" style="color: #e2e8f0; font-size: 0.88rem;"></div>
+      </div>
+
+      <!-- Raw Evidence Accordion -->
+      <div>
+        <h4 style="font-size: 0.88rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;">
+          <i class="fa-solid fa-terminal"></i> Live Command Evidence &amp; Output Traces
+        </h4>
+        <div id="troubleshootEvidenceContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- TAB 4: CI/CD PIPELINE RUNNER & STAGES                                 -->
+<!-- ===================================================================== -->
+<div id="tab-pipeline" class="tab-content">
+  <!-- GitHub Actions Active Workflow & Runner Status Banner -->
+  <div class="card" style="margin-bottom: 24px; border: 1px solid rgba(14, 165, 233, 0.4); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(8, 145, 178, 0.1));">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+          <span class="badge" style="background: #24292f; color: #ffffff; border: 1px solid #475569; font-weight: 600;">
+            <i class="fa-brands fa-github"></i> GitHub Actions
+          </span>
+          <span class="badge badge-online">
+            <i class="fa-solid fa-circle-check"></i> Self-Hosted Runner: {{ runner_info.name|default:"lab-runner-nmas" }} (Online)
+          </span>
+          <span class="badge badge-router">
+            <i class="fa-solid fa-network-wired"></i> Target: Routers &amp; Switches (R1-R5, S1-S4)
+          </span>
+          <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">
+            <i class="fa-solid fa-bolt"></i> Auto-Trigger: Push to <code>main</code>
+          </span>
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">
+          Workflow: <code>.github/workflows/network-ci-cd.yml</code> &mdash; NetDevOps CI/CD Pipeline
+        </h2>
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+          Automatically triggers multi-vendor linting, diffing, safe deployment, and 25-point health verification on every configuration commit.
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="toggleWorkflowYaml()" id="btnToggleYaml" style="color: #38bdf8;">
+          <i class="fa-solid fa-code"></i> <span id="btnYamlLabel">Show Workflow YAML</span>
+        </button>
+        <button onclick="runPipeline('dry-run')" class="btn-run-action btn-secondary btn-sm" id="btnDryRun">
+          <i class="fa-solid fa-play"></i> <span>Dry-Run</span>
+        </button>
+        <button onclick="runPipeline('enforce')" class="btn-run-action btn-primary btn-sm" id="btnEnforce">
+          <i class="fa-solid fa-rocket"></i> <span>Enforce &amp; Deploy</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Workflow YAML Viewer -->
+    <div id="workflowYamlViewer" style="display: none; padding: 16px 20px; border-top: 1px solid rgba(14, 165, 233, 0.2); background: #050811;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: #38bdf8;">
+          <i class="fa-solid fa-code"></i> Active GitHub Actions YAML Configuration (<code>.github/workflows/network-ci-cd.yml</code>):
+        </span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="copyWorkflowYaml()" style="font-size: 0.75rem; padding: 3px 10px;">
+            <i class="fa-solid fa-copy"></i> Copy YAML
+          </button>
+          <a href="{{ github_actions_url }}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 3px 10px; color: #38bdf8;">
+            <i class="fa-brands fa-github"></i> Open Actions <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
+          </a>
+        </div>
+      </div>
+      <pre style="margin: 0; padding: 14px; background: #020617; border: 1px solid #1e293b; border-radius: 6px; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; max-height: 420px; overflow-y: auto; line-height: 1.5;"><code id="workflowYamlCode">{{ workflow_yaml }}</code></pre>
+    </div>
+  </div>
+
+  <div class="stage-track">
+    <div class="stage-card success">
+      <div class="stage-num">Stage 1</div>
+      <div class="stage-title"><i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i> Linting &amp; Quality Gate</div>
+      <div class="stage-desc">YAML schema validation, 17 multi-vendor Jinja2 template checks, and static secret leak scanning.</div>
+    </div>
+    <div class="stage-card success">
+      <div class="stage-num">Stage 2</div>
+      <div class="stage-title"><i class="fa-solid fa-code-compare" style="color: #a855f7;"></i> IaC Compilation &amp; Diffs</div>
+      <div class="stage-desc">Compiles candidate configs for R1–R5 &amp; S1–S4, queries live eAPI, and creates unified diff summaries.</div>
+    </div>
+    <div class="stage-card success">
+      <div class="stage-num">Stage 3</div>
+      <div class="stage-title"><i class="fa-solid fa-bolt" style="color: #eab308;"></i> Safe Deployment Engine</div>
+      <div class="stage-desc">Vault AppRole authentication, pre-flight eAPI handshake, atomic configuration push, and rollback.</div>
+    </div>
+    <div class="stage-card success">
+      <div class="stage-num">Stage 4</div>
+      <div class="stage-title"><i class="fa-solid fa-square-check" style="color: #10b981;"></i> 25-Point Health Verification</div>
+      <div class="stage-desc">Data plane pings &amp; HTTP, BGP/OSPF/RIP convergence, VRRP failover, and InfluxDB/Grafana telemetry.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="font-size: 1.1rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-terminal" style="color: #38bdf8;"></i> Pipeline Execution Terminal
+        </h2>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Real-time execution logs from <code>scripts/run_cicd_pipeline.py</code></div>
+      </div>
+      <div id="pipelineStatusBadge">
+        <span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;"><i class="fa-solid fa-circle-pause"></i> Idle</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="terminal-box" id="terminalOutput">Click "Dry-Run Pipeline" or "Enforce &amp; Deploy" above to execute the end-to-end CI/CD pipeline.
+Output logs from linting, config generation, deployment, and post-checks will stream here in real-time.</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: 1.05rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-code" style="color: #a855f7;"></i> Latest Device Diff Report
+        </h2>
+      </div>
+      <div class="card-body" style="max-height: 420px; overflow-y: auto;">
+        {% if diff_md %}
+          <pre class="diff-box">{{ diff_md }}</pre>
+        {% else %}
+          <p style="color: var(--text-muted); font-size: 0.85rem;">No diff report found. Run Stage 2 to generate live diffs.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: 1.05rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-list-check" style="color: #10b981;"></i> 25-Point Verification Results
+        </h2>
+      </div>
+      <div class="card-body" style="max-height: 420px; overflow-y: auto;">
+        {% if ver_md %}
+          <pre class="diff-box">{{ ver_md }}</pre>
+        {% else %}
+          <p style="color: var(--text-muted); font-size: 0.85rem;">No verification report found. Run Stage 4 to execute assertions.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- TAB SWITCHER ---
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+  event.currentTarget.classList.add('active');
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+
+  if (tabId === 'tab-golden' && !window.goldenLoaded) {
+    runGoldenAudit();
+  } else if (tabId === 'tab-telemetry' && !window.telemetryLoaded) {
+    fetchTelemetry();
+  }
+}
+
+// --- TAB 1: GOLDEN AUDIT ---
+let auditDataGlobal = {};
+function runGoldenAudit() {
+  const tbody = document.getElementById('goldenSummaryTableBody');
+  const btn = document.getElementById('btnRunAudit');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Auditing...`;
+
+  fetch("{% url 'api_golden_audit' %}")
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Run Full Baseline Audit`;
+      if (data.status === 'success') {
+        window.goldenLoaded = true;
+        auditDataGlobal = data.devices;
+        renderGoldenTable(data.devices);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="8" style="color: #ef4444; padding: 18px;">Error running audit: ${data.message}</td></tr>`;
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Run Full Baseline Audit`;
+      tbody.innerHTML = `<tr><td colspan="8" style="color: #ef4444; padding: 18px;">Error: ${err}</td></tr>`;
+    });
+}
+
+function renderGoldenTable(devices) {
+  const tbody = document.getElementById('goldenSummaryTableBody');
+  let html = '';
+  let totalComp = 0;
+  let devCount = 0;
+  let totalRoutes = 0;
+
+  for (const [name, d] of Object.entries(devices)) {
+    devCount++;
+    totalComp += d.config_compliance_pct;
+    totalRoutes += (d.routes ? d.routes.total_routes : 0);
+
+    const statusBadge = d.online 
+      ? `<span class="badge badge-online"><i class="fa-solid fa-circle-check"></i> Online</span>` 
+      : `<span class="badge badge-offline"><i class="fa-solid fa-circle-xmark"></i> Offline</span>`;
+
+    const compColor = d.config_compliance_pct >= 95 ? '#10b981' : (d.config_compliance_pct >= 85 ? '#f59e0b' : '#ef4444');
+    const compBadge = `<span style="font-weight:700; color:${compColor};">${d.config_compliance_pct}%</span>`;
+
+    const diffBadge = d.config_diff_lines > 0 
+      ? `<span class="badge badge-warning">+${d.diff_added} / -${d.diff_removed}</span>`
+      : `<span class="badge badge-online">In-Sync</span>`;
+
+    const routeStr = d.routes ? `${d.routes.total_routes} (O:${d.routes.ospf}, B:${d.routes.bgp})` : 'N/A';
+    const nbrStr = d.neighbors ? `OSPF: ${d.neighbors.ospf_neighbors.length} | BGP: ${d.neighbors.bgp_peers.length}` : 'N/A';
+
+    html += `
+      <tr>
+        <td><strong>${name}</strong></td>
+        <td><code>${d.mgmt_ip}</code></td>
+        <td>${statusBadge}</td>
+        <td>${compBadge}</td>
+        <td>${diffBadge}</td>
+        <td>${routeStr}</td>
+        <td>${nbrStr}</td>
+        <td>
+          <button onclick="viewDeviceDiff('${name}')" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-file-lines"></i> Diff
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  tbody.innerHTML = html;
+  const avgComp = devCount > 0 ? (totalComp / devCount).toFixed(1) : 100.0;
+  document.getElementById('metricFleetCompliance').innerHTML = `<span style="color:${avgComp >= 90 ? '#10b981' : '#f59e0b'};">${avgComp}%</span>`;
+  document.getElementById('metricTotalRoutes').innerHTML = `<span style="color:#38bdf8;">${totalRoutes} Active Routes</span>`;
+}
+
+function viewDeviceDiff(hostname) {
+  const d = auditDataGlobal[hostname];
+  if (!d) return;
+  const drawer = document.getElementById('deviceDiffDetailCard');
+  const title = document.getElementById('diffDetailTitle');
+  const content = document.getElementById('diffDetailContent');
+  const badge = document.getElementById('diffDetailBadge');
+
+  title.innerText = `🔍 ${hostname} Configuration Diff (vs. golden_configs/${hostname.toLowerCase()}_v1.0-baseline.cfg)`;
+  badge.innerHTML = `<span class="badge" style="background: rgba(56,189,248,0.2); color:#38bdf8;">+${d.diff_added} Added / -${d.diff_removed} Removed</span>`;
+  content.innerText = d.diff_unified || "No configuration drift detected. Device is 100% compliant with golden baseline.";
+  drawer.style.display = 'block';
+  drawer.scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- TAB 2: TELEMETRY & CPU USAGE ---
+function fetchTelemetry() {
+  const grid = document.getElementById('deviceTelemetryGrid');
+  const connBody = document.getElementById('connectivityTableBody');
+  const btn = document.getElementById('btnRefreshTelemetry');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Refreshing...`;
+
+  fetch("{% url 'api_telemetry' %}")
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Refresh Telemetry`;
+      if (data.status === 'success') {
+        window.telemetryLoaded = true;
+        renderTelemetry(data.telemetry);
+      } else {
+        grid.innerHTML = `<div style="color:#ef4444; padding:20px;">Error: ${data.message}</div>`;
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Refresh Telemetry`;
+      grid.innerHTML = `<div style="color:#ef4444; padding:20px;">Error: ${err}</div>`;
+    });
+}
+
+function renderTelemetry(telemetry) {
+  const grid = document.getElementById('deviceTelemetryGrid');
+  const connBody = document.getElementById('connectivityTableBody');
+
+  // 1. Render CPU & Devices
+  let devHtml = '';
+  for (const [name, d] of Object.entries(telemetry.devices)) {
+    const barClass = d.cpu_status === 'HIGH' ? 'progress-bar-high' : (d.cpu_status === 'ELEVATED' ? 'progress-bar-elevated' : 'progress-bar-normal');
+    const cpuColor = d.cpu_status === 'HIGH' ? '#ef4444' : (d.cpu_status === 'ELEVATED' ? '#f59e0b' : '#10b981');
+
+    devHtml += `
+      <div class="device-telemetry-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <strong style="font-size: 1.05rem; color: #ffffff;">${name}</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); margin-left: 6px;"><code>${d.mgmt_ip}</code></span>
+          </div>
+          <span class="badge ${d.online ? 'badge-online' : 'badge-offline'}">${d.online ? 'Online' : 'Offline'}</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-top: 10px;">
+          <span style="color: var(--text-muted);"><i class="fa-solid fa-microchip"></i> CPU Usage</span>
+          <strong style="color: ${cpuColor};">${d.cpu_total_pct}% (${d.cpu_status})</strong>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill ${barClass}" style="width: ${Math.min(d.cpu_total_pct, 100)}%;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-top: 4px;">
+          <span style="color: var(--text-muted);"><i class="fa-solid fa-memory"></i> Memory</span>
+          <span>${d.mem_used_mb}MB / ${d.mem_total_mb}MB (${d.mem_pct}%)</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; border-top: 1px solid #1e293b; padding-top: 8px;">
+          <span>Uptime: ${d.uptime}</span>
+          <span>EOS: ${d.version.split('-')[0]}</span>
+        </div>
+      </div>
+    `;
+  }
+  grid.innerHTML = devHtml;
+
+  // 2. Render Connectivity Matrix
+  let connHtml = '';
+  if (telemetry.connectivity && telemetry.connectivity.probes) {
+    for (const p of telemetry.connectivity.probes) {
+      const stBadge = p.status === 'PASS' 
+        ? `<span class="badge badge-online"><i class="fa-solid fa-check"></i> PASS</span>`
+        : `<span class="badge badge-offline"><i class="fa-solid fa-xmark"></i> FAIL</span>`;
+      
+      connHtml += `
+        <tr>
+          <td><strong>${p.source}</strong></td>
+          <td>${p.target_name}</td>
+          <td><code>${p.type}</code></td>
+          <td>${stBadge}</td>
+          <td>${p.packet_loss_pct}%</td>
+          <td><strong>${p.detail}</strong></td>
+        </tr>
+      `;
+    }
+  }
+  connBody.innerHTML = connHtml;
+}
+
+// --- TAB 3: TROUBLESHOOTING ---
+function setPromptAndRun(promptText) {
+  document.getElementById('troubleshootPrompt').value = promptText;
+  runTroubleshoot();
+}
+
+function runTroubleshoot() {
+  const promptInput = document.getElementById('troubleshootPrompt');
+  const btn = document.getElementById('btnTroubleshoot');
+  const card = document.getElementById('troubleshootResultCard');
+  const badge = document.getElementById('troubleshootStatusBadge');
+  const findingsList = document.getElementById('troubleshootFindingsList');
+  const recList = document.getElementById('troubleshootRecommendationsList');
+  const evContainer = document.getElementById('troubleshootEvidenceContainer');
+
+  const prompt = promptInput.value.trim();
+  if (!prompt) return;
+
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Investigating...`;
+
+  const formData = new FormData();
+  formData.append('prompt', prompt);
+
+  fetch("{% url 'api_troubleshoot' %}", {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+  })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-play"></i> <span>Diagnose</span>`;
+      if (data.status === 'success') {
+        const rep = data.report;
+        card.style.display = 'block';
+
+        const stClass = rep.status === 'HEALTHY' ? 'badge-online' : (rep.status === 'WARNING' ? 'badge-warning' : 'badge-offline');
+        badge.innerHTML = `<span class="badge ${stClass}"><i class="fa-solid fa-circle-check"></i> ${rep.status} (${rep.elapsed_sec}s)</span>`;
+
+        findingsList.innerHTML = rep.findings.map(f => `<div style="padding: 6px 10px; background: #090e1a; border-radius: 6px; border: 1px solid #1e293b;">${f}</div>`).join('');
+        recList.innerHTML = rep.recommendations.map(r => `<div>➜ ${r}</div>`).join('');
+
+        let evHtml = '';
+        for (const [k, v] of Object.entries(rep.evidence)) {
+          evHtml += `
+            <details style="background: #090e1a; border: 1px solid #1e293b; border-radius: 6px; padding: 8px 12px;">
+              <summary style="cursor: pointer; font-weight: 600; color: #38bdf8; font-size: 0.85rem;">${k}</summary>
+              <pre class="diff-box" style="margin-top: 8px; max-height: 250px;">${v}</pre>
+            </details>
+          `;
+        }
+        evContainer.innerHTML = evHtml;
+        card.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        alert('Error: ' + data.message);
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-play"></i> <span>Diagnose</span>`;
+      alert('Error communicating with troubleshooting engine: ' + err);
+    });
+}
+
+// --- TAB 4: CI/CD RUNNER ---
+function runPipeline(mode) {
+  const terminal = document.getElementById('terminalOutput');
+  const badge = document.getElementById('pipelineStatusBadge');
+  const btnDry = document.getElementById('btnDryRun');
+  const btnEnf = document.getElementById('btnEnforce');
+
+  btnDry.disabled = true;
+  btnEnf.disabled = true;
+  badge.innerHTML = `<span class="badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8;"><i class="fa-solid fa-spinner fa-spin"></i> Executing (${mode})...</span>`;
+  terminal.innerText = `[${new Date().toLocaleTimeString()}] Starting NetDevOps CI/CD Pipeline in ${mode.toUpperCase()} mode...\nExecuting stages 1 to 4...\n\n`;
+
+  const formData = new FormData();
+  formData.append('mode', mode);
+
+  fetch("{% url 'api_run_cicd' %}", {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    btnDry.disabled = false;
+    btnEnf.disabled = false;
+    if (data.status === 'success') {
+      badge.innerHTML = `<span class="badge badge-online"><i class="fa-solid fa-check"></i> Passed (${data.elapsed_sec}s)</span>`;
+      terminal.innerText = data.stdout || data.message;
+    } else {
+      badge.innerHTML = `<span class="badge badge-offline"><i class="fa-solid fa-triangle-exclamation"></i> Failed (${data.elapsed_sec || 0}s)</span>`;
+      terminal.innerText = (data.stdout ? data.stdout + '\n\n' : '') + (data.stderr || data.message);
+    }
+  })
+  .catch(err => {
+    btnDry.disabled = false;
+    btnEnf.disabled = false;
+    badge.innerHTML = `<span class="badge badge-offline"><i class="fa-solid fa-circle-xmark"></i> Error</span>`;
+    terminal.innerText += `\nError executing pipeline: ${err}`;
+  });
+}
+
+function toggleWorkflowYaml() {
+  const viewer = document.getElementById('workflowYamlViewer');
+  const label = document.getElementById('btnYamlLabel');
+  if (viewer.style.display === 'none' || viewer.style.display === '') {
+    viewer.style.display = 'block';
+    label.innerText = 'Hide Workflow YAML';
+  } else {
+    viewer.style.display = 'none';
+    label.innerText = 'Show Workflow YAML';
+  }
+}
+
+function copyWorkflowYaml() {
+  const code = document.getElementById('workflowYamlCode').innerText;
+  navigator.clipboard.writeText(code);
+  alert('Workflow YAML copied to clipboard!');
+}
+
+// Automatically load initial tab data
+document.addEventListener('DOMContentLoaded', () => {
+  runGoldenAudit();
+});
+</script>
+{% endblock %}
