@@ -1,0 +1,5 @@
+import json, os, pyotp, urllib.parse
+with open(os.path.expanduser('~/.vault_mfa.json')) as f:
+    data = json.load(f)
+sec = urllib.parse.parse_qs(urllib.parse.urlparse(data['operator_otp_url']).query)['secret'][0]
+print('Vault TOTP:', pyotp.TOTP(sec).now())

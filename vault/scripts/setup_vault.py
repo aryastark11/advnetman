@@ -75,14 +75,22 @@ except Exception as e:
     else:
         print(f"[-] Auth method userpass: {e}")
 
-# Create operator and admin users
+# Create operator, netops and admin users
 client.auth.userpass.create_or_update_user(
     username="operator",
-    password="OperatorSecurePassword2026!",
+    password="cisco",
     policies=["network-operator"],
     mount_point="userpass"
 )
 print("[+] Created userpass account 'operator' (policy: network-operator)")
+
+client.auth.userpass.create_or_update_user(
+    username="netops",
+    password="cisco",
+    policies=["network-operator"],
+    mount_point="userpass"
+)
+print("[+] Created userpass account 'netops' (policy: network-operator)")
 
 client.auth.userpass.create_or_update_user(
     username="admin",

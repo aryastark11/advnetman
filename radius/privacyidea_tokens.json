@@ -1,20 +1,20 @@
 {
   "operator": {
     "realm": "operator-realm",
-    "password": "OperatorSecurePassword2026!",
-    "secret": "JBSWY3DPEHPK3PXP",
+    "password": "cisco",
+    "secret": "MPFDGQSIHDF3KJJU23JFYTEIYCLFRXSA",
     "description": "NMAS Operator Hardware/App TOTP Token"
   },
   "netops": {
     "realm": "operator-realm",
-    "password": "OperatorSecurePassword2026!",
-    "secret": "JBSWY3DPEHPK3PXP",
+    "password": "cisco",
+    "secret": "MPFDGQSIHDF3KJJU23JFYTEIYCLFRXSA",
     "description": "NMAS Netops Hardware/App TOTP Token"
   },
   "admin": {
     "realm": "admin-realm",
     "password": "AdminMasterPassword2026!",
-    "secret": "JBSWY3DPEHPK3PXQ",
+    "secret": "HWUKL2FU6YRBYNEEHMRWCINHPJD2PX5M",
     "description": "NMAS Admin Master TOTP Token"
   }
 }

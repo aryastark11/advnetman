@@ -20,3 +20,4 @@ vault/certs/*.csr
 .vault_keys.json
 secrets/
 *.secret
+.coverage

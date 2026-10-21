@@ -46,7 +46,7 @@ radius_cmds = [
     "aaa authentication login default group radius local",
     "aaa authentication login command-api local",
     "aaa authentication login console local",
-    "username netops privilege 15 secret LocalNetopsPass2026!",
+    "username netops privilege 15 secret cisco",
     "write memory"
 ]
 
@@ -69,7 +69,7 @@ op_secret = tokens["netops"]["secret"]
 totp = pyotp.TOTP(op_secret)
 
 # 3. Test 1: SSH with WRONG 2FA OTP (Expected: DENIED / Permission Denied)
-print("\n[TEST 1] SSH to R1 with WRONG OTP ('OperatorPassword + 000000') (Expected: REJECTED)...")
+print(f"\n[TEST 1] SSH to R1 with WRONG OTP ('{op_pass} + 000000') (Expected: REJECTED)...")
 ssh_cmd_wrong = [
     "sshpass", "-p", f"{op_pass}000000",
     "ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "ConnectTimeout=4",
@@ -83,7 +83,7 @@ else:
 
 # 4. Test 2: SSH with VALID 2FA TOTP (Expected: ALLOWED / Access Granted)
 current_otp = totp.now()
-print(f"\n[TEST 2] SSH to R1 with VALID 2FA OTP ('OperatorPassword + {current_otp}') (Expected: ALLOWED)...")
+print(f"\n[TEST 2] SSH to R1 with VALID 2FA OTP ('{op_pass} + {current_otp}') (Expected: ALLOWED)...")
 ssh_cmd_good = [
     "sshpass", "-p", f"{op_pass}{current_otp}",
     "ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "ConnectTimeout=4",

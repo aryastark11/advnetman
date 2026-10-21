@@ -34,7 +34,7 @@ print("======================================================================")
 
 # 1. Negative Test: Login WITHOUT TOTP (Expected: Empty Token + MFA Challenge)
 print("\n[TEST 1] Operator login WITHOUT TOTP (Expected: MFA CHALLENGE / NO TOKEN)...")
-req_payload = {"password": "OperatorSecurePassword2026!"}
+req_payload = {"password": "cisco"}
 resp = requests.post(
     f"{VAULT_URL}/v1/auth/userpass/login/operator",
     json=req_payload,
@@ -74,6 +74,19 @@ resp_valid = requests.post(
     headers=valid_headers,
     verify=CA_CERT
 )
+if resp_valid.status_code != 200:
+    import time
+    rem = 30 - (int(time.time()) % 30) + 1
+    print(f"  [*] Waiting {rem}s for fresh TOTP window to avoid token reuse rejection...")
+    time.sleep(rem)
+    current_code = op_totp.now()
+    valid_headers = {"X-Vault-MFA": f"{method_id}:{current_code}"}
+    resp_valid = requests.post(
+        f"{VAULT_URL}/v1/auth/userpass/login/operator",
+        json=req_payload,
+        headers=valid_headers,
+        verify=CA_CERT
+    )
 if resp_valid.status_code == 200:
     op_token = resp_valid.json()["auth"]["client_token"]
     print(f"  [✓] MFA Login SUCCESS! Token received.")

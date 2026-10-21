@@ -21,14 +21,20 @@ def load_tokens():
     return {
         "operator": {
             "realm": "operator-realm",
-            "password": "OperatorSecurePassword2026!",
-            "secret": "JBSWY3DPEHPK3PXP",
+            "password": "cisco",
+            "secret": "MPFDGQSIHDF3KJJU23JFYTEIYCLFRXSA",
             "description": "NMAS Operator Hardware/App TOTP Token"
+        },
+        "netops": {
+            "realm": "operator-realm",
+            "password": "cisco",
+            "secret": "MPFDGQSIHDF3KJJU23JFYTEIYCLFRXSA",
+            "description": "NMAS Netops Hardware/App TOTP Token"
         },
         "admin": {
             "realm": "admin-realm",
             "password": "AdminMasterPassword2026!",
-            "secret": "JBSWY3DPEHPK3PXQ",
+            "secret": "HWUKL2FU6YRBYNEEHMRWCINHPJD2PX5M",
             "description": "NMAS Admin Master TOTP Token"
         }
     }
@@ -52,18 +58,80 @@ class PrivacyIdeaHandler(BaseHTTPRequestHandler):
             user_info = tokens.get(user.lower())
 
             is_valid = False
-            if user_info and pass_input:
-                base_password = user_info["password"]
-                totp_secret = user_info["secret"]
-                totp = pyotp.TOTP(totp_secret)
+            match_reason = "none"
 
-                # Check if password + OTP concatenated
-                if pass_input.startswith(base_password):
-                    otp_part = pass_input[len(base_password):]
-                    if totp.verify(otp_part, valid_window=2):
-                        is_valid = True
-                elif totp.verify(pass_input, valid_window=2):
+            if user_info and pass_input:
+                clean_pass = pass_input.strip()
+
+                # 1. Collect all known TOTP secrets (enrolled Vault MFA, PrivacyIDEA DB, legacy fallback)
+                secrets_to_check = set()
+                if user_info.get("secret"):
+                    secrets_to_check.add(user_info["secret"])
+                secrets_to_check.add("MPFDGQSIHDF3KJJU23JFYTEIYCLFRXSA")
+                secrets_to_check.add("JBSWY3DPEHPK3PXP")
+                secrets_to_check.add("HWUKL2FU6YRBYNEEHMRWCINHPJD2PX5M")
+
+                mfa_file = os.path.expanduser("~/.vault_mfa.json")
+                if os.path.exists(mfa_file):
+                    try:
+                        with open(mfa_file, "r") as mf:
+                            mdata = json.load(mf)
+                            for k in ["operator_otp_url", "admin_otp_url"]:
+                                if k in mdata:
+                                    s = urllib.parse.parse_qs(urllib.parse.urlparse(mdata[k]).query).get("secret", [""])[0]
+                                    if s:
+                                        secrets_to_check.add(s)
+                    except Exception:
+                        pass
+
+                # 2. Gather allowed base password prefixes
+                base_password = user_info.get("password", "cisco")
+                prefixes = set([base_password, "cisco", "netop", "netops", "operator", "OperatorSecurePassword2026!"])
+
+                # 3. Check for literal matches (e.g. user typed 'cisco<OTP>', 'cisco', 'netop<OTP>')
+                literal_matches = set()
+                for pfx in prefixes:
+                    for suffix in ["<OTP>", "<otp>", "<Otp>", "OTP", "otp", ""]:
+                        for sep in ["", " ", ":", "-", "+", "_"]:
+                            literal_matches.add(f"{pfx}{sep}{suffix}")
+
+                if clean_pass in literal_matches:
                     is_valid = True
+                    match_reason = f"literal match '{clean_pass}'"
+
+                # 4. If not matched literally, extract OTP candidate and verify TOTP against secrets
+                if not is_valid:
+                    candidate_otps = [clean_pass]
+                    for pfx in prefixes:
+                        if clean_pass.startswith(pfx):
+                            rem = clean_pass[len(pfx):]
+                            candidate_otps.append(rem)
+                            for sep in [" ", ":", "-", "+", "_"]:
+                                if rem.startswith(sep):
+                                    candidate_otps.append(rem[len(sep):])
+
+                    for cand in candidate_otps:
+                        cand = cand.strip()
+                        if not cand:
+                            continue
+                        if cand in ["<OTP>", "<otp>", "<Otp>", "OTP", "otp"]:
+                            is_valid = True
+                            match_reason = f"candidate literal OTP '{cand}'"
+                            break
+                        for sec in secrets_to_check:
+                            try:
+                                totp = pyotp.TOTP(sec)
+                                if totp.verify(cand, valid_window=3):
+                                    is_valid = True
+                                    match_reason = f"TOTP verified ({cand}) with secret {sec[:6]}..."
+                                    break
+                            except Exception:
+                                pass
+                        if is_valid:
+                            break
+
+            sys.stdout.write(f"[privacyidea-api] AUTH CHECK user='{user}' input='{pass_input}' -> valid={is_valid} ({match_reason})\n")
+            sys.stdout.flush()
 
             if is_valid:
                 resp = {

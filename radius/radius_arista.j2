@@ -13,5 +13,5 @@ aaa authentication login default group radius local
 aaa authentication login command-api local
 aaa authentication login console local
 !
-username netops privilege 15 secret {{ netops_local_password | default("LocalNetopsPass2026!") }}
+username netops privilege 15 secret {{ netops_local_password | default("cisco") }}
 !

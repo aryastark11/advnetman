@@ -35,8 +35,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  stage-0-unit-tests-and-coverage:
+    name: "Stage 0: NSoT GUI Unit Tests & Code Coverage"
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Python & Coverage Dependencies
+        run: |
+          python3 --version
+          python3 -c "import coverage, django; print('Django & Coverage verified.')" || python3 -m pip install --break-system-packages -q coverage django
+
+      - name: Run NSoT Unit Tests & Measure Coverage
+        run: |
+          mkdir -p build/coverage
+          coverage run --source=nsot_project/automation nsot_project/manage.py test automation
+          coverage report -m
+          coverage json -o build/coverage/coverage.json
+          coverage html -d build/coverage/html
+
+      - name: Publish Coverage Report to GitHub Step Summary
+        if: always()
+        run: |
+          if [ -f "build/coverage/coverage.json" ]; then
+            python3 scripts/generate_coverage_summary.py --input build/coverage/coverage.json --output build/coverage_summary.md
+            cat build/coverage_summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Archive Code Coverage Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nsot-unit-tests-coverage
+          path: |
+            build/coverage/
+            build/coverage_summary.md
+          retention-days: 14
+
   stage-1-lint-and-validate:
     name: "Stage 1: Linting & Quality Gate"
+    needs: stage-0-unit-tests-and-coverage
     runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Repository
@@ -148,19 +187,29 @@ jobs:
         run: |
           python3 scripts/verify_network_health.py --markdown build/verification_report.md --json build/verification_results.json
 
-      - name: Publish Test Report to GitHub Step Summary
+      - name: Run Network Design Regression Test Suite (Positive & Negative)
+        run: |
+          python3 scripts/verify_network_regression.py --markdown build/regression_report.md --json build/regression_results.json
+
+      - name: Publish Health & Regression Reports to GitHub Step Summary
         if: always()
         run: |
           if [ -f "build/verification_report.md" ]; then
             cat build/verification_report.md >> $GITHUB_STEP_SUMMARY
           fi
+          if [ -f "build/regression_report.md" ]; then
+            echo -e "\n\n---\n" >> $GITHUB_STEP_SUMMARY
+            cat build/regression_report.md >> $GITHUB_STEP_SUMMARY
+          fi
 
-      - name: Archive Verification Results Artifact
+      - name: Archive Verification & Regression Results Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verification-test-results
+          name: verification-and-regression-results
           path: |
             build/verification_report.md
             build/verification_results.json
+            build/regression_report.md
+            build/regression_results.json
           retention-days: 14

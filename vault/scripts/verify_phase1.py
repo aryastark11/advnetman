@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import hvac
+import requests
 
 CA_CERT = "/home/student/Desktop/lab1/vault/certs/ca.crt"
 VAULT_URL = "https://127.0.0.1:8200"
@@ -24,13 +25,16 @@ if os.path.exists(mfa_file):
     op_sec = urllib.parse.parse_qs(urllib.parse.urlparse(op_otp_url).query)["secret"][0]
     headers["X-Vault-MFA"] = f"{method_id}:{pyotp.TOTP(op_sec).now()}"
 
-import requests
-resp = requests.post(
-    f"{VAULT_URL}/v1/auth/userpass/login/operator",
-    json={"password": "OperatorSecurePassword2026!"},
-    headers=headers,
-    verify=CA_CERT
-)
+resp = None
+for op_pwd in ["cisco", "OperatorSecurePassword2026!"]:
+    resp = requests.post(
+        f"{VAULT_URL}/v1/auth/userpass/login/operator",
+        json={"password": op_pwd},
+        headers=headers,
+        verify=CA_CERT
+    )
+    if resp.status_code == 200:
+        break
 if resp.status_code == 200:
     op_token = resp.json()["auth"]["client_token"]
     op_client = hvac.Client(url=VAULT_URL, token=op_token, verify=CA_CERT)
