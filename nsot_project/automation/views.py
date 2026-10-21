@@ -1676,6 +1676,9 @@ def api_commit_and_pipeline(request):
     git_msg = commit_message or f"feat({device_name.lower()}): update configuration via NSoT"
 
     try:
+        # Step 3a: Synchronize with origin/main before staging
+        subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=20)
+
         cfg_file_path = os.path.join(cfg_dir, "running-config.cfg")
         cfg_rel = os.path.relpath(cfg_file_path, repo_dir)
         subprocess.run(["git", "add", cfg_rel], cwd=repo_dir, check=False)
@@ -1693,7 +1696,21 @@ def api_commit_and_pipeline(request):
                 
                 # Push to GitHub to trigger GitHub Actions
                 push_res = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=30)
+                if push_res.returncode != 0:
+                    subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=20)
+                    push_res = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=30)
                 git_pushed = (push_res.returncode == 0)
+
+        # Step 3b: If unpushed commits exist, push them; if push blocked, trigger via gh CLI
+        if not git_pushed:
+            unpushed_chk = subprocess.run(["git", "log", "origin/main..HEAD", "--oneline"], cwd=repo_dir, capture_output=True, text=True)
+            if unpushed_chk.stdout.strip():
+                push_res = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=30)
+                git_pushed = (push_res.returncode == 0)
+            if not git_pushed:
+                wf_res = subprocess.run(["gh", "workflow", "run", "network-ci-cd.yml"], cwd=repo_dir, capture_output=True, text=True, timeout=15)
+                if wf_res.returncode == 0:
+                    git_pushed = True
     except Exception as ge:
         print(f"[!] Git commit/push error: {ge}")
 
