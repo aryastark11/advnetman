@@ -30,6 +30,123 @@
     }
   ],
   "liveNow": true,
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "nmas",
+    "telegraf",
+    "influxdb",
+    "snmp",
+    "ztp",
+    "multi-device"
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "NMAS Network Operations & Data Lake Dashboard",
+  "uid": "nmas-noc-master",
+  "version": 5,
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "description": "Select an individual device to view respective metrics",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Device",
+        "multi": false,
+        "name": "device",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "r1",
+            "value": "r1"
+          },
+          {
+            "selected": false,
+            "text": "r2",
+            "value": "r2"
+          },
+          {
+            "selected": false,
+            "text": "r3",
+            "value": "r3"
+          },
+          {
+            "selected": false,
+            "text": "r4",
+            "value": "r4"
+          },
+          {
+            "selected": false,
+            "text": "r5",
+            "value": "r5"
+          },
+          {
+            "selected": false,
+            "text": "r6",
+            "value": "r6"
+          },
+          {
+            "selected": false,
+            "text": "r7",
+            "value": "r7"
+          },
+          {
+            "selected": false,
+            "text": "s1",
+            "value": "s1"
+          },
+          {
+            "selected": false,
+            "text": "s2",
+            "value": "s2"
+          },
+          {
+            "selected": false,
+            "text": "s3",
+            "value": "s3"
+          },
+          {
+            "selected": false,
+            "text": "s4",
+            "value": "s4"
+          }
+        ],
+        "query": "r1,r2,r3,r4,r5,r6,r7,s1,s2,s3,s4",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
   "panels": [
     {
       "id": 999,
@@ -43,7 +160,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #0b1120, #131d31); border:1px solid #27354f; border-radius:8px; padding:10px 20px;\"><div style=\"display:flex; align-items:center; gap:12px;\"><div style=\"background:linear-gradient(135deg, #06b6d4, #3b82f6); width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff;\">RC</div><div><span style=\"font-size:16px; font-weight:700; color:#f1f5f9;\">NMAS Telemetry & Network Observability Operations</span><br/><span style=\"font-size:11px; color:#94a3b8;\">Telegraf & InfluxDB Data Lake Engine</span></div></div><div><a href=\"http://localhost:8000\" target=\"_self\" style=\"display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg, #06b6d4, #3b82f6); color:#ffffff; font-weight:600; font-size:13px; padding:8px 18px; border-radius:6px; text-decoration:none; box-shadow:0 4px 12px rgba(6,182,212,0.35);\"><span>\ud83c\udfe0 Back to Django NSoT GUI</span></a></div></div>"
+        "content": "<div style=\"display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #0b1120, #131d31); border:1px solid #27354f; border-radius:8px; padding:10px 20px;\"><div style=\"display:flex; align-items:center; gap:12px;\"><div style=\"background:linear-gradient(135deg, #06b6d4, #3b82f6); width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff;\">RC</div><div><span style=\"font-size:16px; font-weight:700; color:#f1f5f9;\">NMAS Telemetry & Network Observability Operations</span><br/><span style=\"font-size:11px; color:#94a3b8;\">Telegraf & InfluxDB Data Lake Engine \u2022 Per-Device Interactive Filtering</span></div></div><div><a href=\"http://localhost:8000\" target=\"_self\" style=\"display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg, #06b6d4, #3b82f6); color:#ffffff; font-weight:600; font-size:13px; padding:8px 18px; border-radius:6px; text-decoration:none; box-shadow:0 4px 12px rgba(6,182,212,0.35);\"><span>\ud83c\udfe0 Back to Django NSoT GUI</span></a></div></div>"
       },
       "transparent": true
     },
@@ -67,12 +184,12 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 1
+        "y": 3
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT count(distinct(hostname)) FROM telegraf_snmp WHERE $timeFilter",
+          "query": "SELECT count(last) FROM (SELECT last(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname)",
           "rawQuery": true,
           "refId": "A"
         }
@@ -115,12 +232,12 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 1
+        "y": 3
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT count(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter",
+          "query": "SELECT count(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter AND hostname =~ /^$device$/",
           "rawQuery": true,
           "refId": "A"
         }
@@ -163,12 +280,12 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 1
+        "y": 3
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT count(ifInOctets) FROM telegraf_interface_stats WHERE $timeFilter",
+          "query": "SELECT count(ifInOctets) FROM telegraf_interface_stats WHERE $timeFilter AND hostname =~ /^$device$/",
           "rawQuery": true,
           "refId": "A"
         }
@@ -211,12 +328,12 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 1
+        "y": 3
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT count(result_code) FROM device_ping WHERE $timeFilter",
+          "query": "SELECT count(result_code) FROM device_ping WHERE $timeFilter AND hostname =~ /^$device$/",
           "rawQuery": true,
           "refId": "A"
         }
@@ -259,12 +376,12 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 1
+        "y": 3
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT 7 FROM telegraf_snmp LIMIT 1",
+          "query": "SELECT last(cpu_utilization)*0 + 7 AS \"Retention\" FROM telegraf_snmp WHERE $timeFilter",
           "rawQuery": true,
           "refId": "A"
         }
@@ -278,7 +395,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "teal",
                 "value": null
               }
             ]
@@ -287,7 +404,7 @@
         }
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
@@ -307,12 +424,12 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 1
+        "y": 3
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT count(uptime) FROM telegraf_snmp WHERE time > now() - 1m",
+          "query": "SELECT count(uptime) FROM telegraf_snmp WHERE time > now() - 1m AND hostname =~ /^$device$/",
           "rawQuery": true,
           "refId": "A"
         }
@@ -326,8 +443,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "teal",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
             ]
           },
@@ -353,26 +474,26 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 7
       },
       "id": 200,
-      "title": "Telegraf SNMP Monitoring & Device Health (Routers R1-R6, Switches S1-S4)",
+      "title": "Device Health, CPU & Resource Monitoring ($device)",
       "type": "row"
     },
     {
       "id": 7,
-      "title": "Real-Time Device CPU Load (%)",
+      "title": "Real-Time Device CPU Load (%) - $device",
       "type": "gauge",
       "gridPos": {
         "h": 6,
-        "w": 8,
+        "w": 6,
         "x": 0,
-        "y": 6
+        "y": 8
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT last(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter GROUP BY hostname",
+          "query": "SELECT last(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname",
           "rawQuery": true,
           "refId": "A"
         }
@@ -384,6 +505,68 @@
           },
           "max": 100,
           "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "id": 501,
+      "title": "Live CPU & Memory Usage (%) - $device",
+      "type": "gauge",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(cpu_utilization) AS \"CPU Utilization\" FROM device_telemetry WHERE hostname =~ /^$device$/",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT last(mem_pct) AS \"Memory Utilization\" FROM device_telemetry WHERE hostname =~ /^$device$/",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "min": 0,
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -418,18 +601,18 @@
     },
     {
       "id": 8,
-      "title": "CPU Load History (Telegraf SNMP Timeseries)",
+      "title": "CPU Load History ($device)",
       "type": "timeseries",
       "gridPos": {
         "h": 6,
-        "w": 10,
-        "x": 8,
-        "y": 6
+        "w": 8,
+        "x": 12,
+        "y": 8
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT mean(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter GROUP BY time($__interval), hostname fill(linear)",
+          "query": "SELECT mean(cpu_utilization) FROM telegraf_snmp WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY time($__interval), hostname fill(linear)",
           "rawQuery": true,
           "refId": "A"
         }
@@ -451,18 +634,18 @@
     },
     {
       "id": 9,
-      "title": "Device System Uptime (Days / Hours)",
+      "title": "Device System Uptime - $device",
       "type": "bargauge",
       "gridPos": {
         "h": 6,
-        "w": 6,
-        "x": 18,
-        "y": 6
+        "w": 4,
+        "x": 20,
+        "y": 8
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT last(uptime)/100 FROM telegraf_snmp WHERE $timeFilter GROUP BY hostname",
+          "query": "SELECT last(uptime)/100 FROM telegraf_snmp WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname",
           "rawQuery": true,
           "refId": "A"
         }
@@ -488,18 +671,18 @@
     },
     {
       "id": 10,
-      "title": "Telegraf Interface Traffic (Inbound / Outbound bps)",
+      "title": "Interface Traffic (Inbound / Outbound bps) - $device",
       "type": "timeseries",
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 14
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT non_negative_derivative(mean(ifInOctets), 1s) * 8 AS \"Inbound bps\", non_negative_derivative(mean(ifOutOctets), 1s) * 8 AS \"Outbound bps\" FROM telegraf_interface_stats WHERE $timeFilter AND ifDescr =~ /Ethernet/ GROUP BY time($__interval), hostname, ifDescr fill(null)",
+          "query": "SELECT non_negative_derivative(mean(ifInOctets), 1s) * 8 AS \"Inbound bps\", non_negative_derivative(mean(ifOutOctets), 1s) * 8 AS \"Outbound bps\" FROM telegraf_interface_stats WHERE $timeFilter AND hostname =~ /^$device$/ AND ifDescr =~ /Ethernet|Management|Tunnel/ GROUP BY time($__interval), hostname, ifDescr fill(null)",
           "rawQuery": true,
           "refId": "A"
         }
@@ -522,26 +705,26 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 21
       },
       "id": 300,
-      "title": "ICMP Device Reachability & Status Table",
+      "title": "ICMP Reachability & Firmware System Overview ($device)",
       "type": "row"
     },
     {
       "id": 11,
-      "title": "ICMP Ping Response Latency",
+      "title": "ICMP Ping Response Latency - $device",
       "type": "timeseries",
       "gridPos": {
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 22
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT mean(average_response_ms) FROM device_ping WHERE $timeFilter GROUP BY time($__interval), url fill(null)",
+          "query": "SELECT mean(average_response_ms) FROM device_ping WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY time($__interval), hostname fill(null)",
           "rawQuery": true,
           "refId": "A"
         }
@@ -558,18 +741,18 @@
     },
     {
       "id": 12,
-      "title": "Device Firmware & System Overview",
+      "title": "Device Firmware & System Overview - $device",
       "type": "table",
       "gridPos": {
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 22
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT last(sys_descr) AS \"OS Version\", last(uptime)/8640000 AS \"Uptime Days\", last(cpu_utilization) AS \"CPU %\" FROM telegraf_snmp WHERE $timeFilter GROUP BY hostname",
+          "query": "SELECT last(sys_descr) AS \"OS Version\", last(uptime)/8640000 AS \"Uptime Days\", last(cpu_utilization) AS \"CPU %\" FROM telegraf_snmp WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname",
           "rawQuery": true,
           "refId": "A"
         }
@@ -581,26 +764,26 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 28
       },
       "id": 400,
-      "title": "Live Interface Counters, Error Rates & Discards (Routers R1-R6, Switches S1-S4)",
+      "title": "Live Interface Counters, Error Rates & Discards ($device)",
       "type": "row"
     },
     {
       "id": 13,
-      "title": "Live Interface Counters & Port Statistics Table",
+      "title": "Live Interface Counters & Port Statistics Table - $device",
       "type": "table",
       "gridPos": {
         "h": 8,
-        "w": 15,
+        "w": 14,
         "x": 0,
-        "y": 26
+        "y": 29
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT last(ifOperStatus) AS \"Status\", last(ifInOctets) AS \"Inbound (Bytes)\", last(ifOutOctets) AS \"Outbound (Bytes)\", last(ifInErrors) AS \"In Errors\", last(ifOutErrors) AS \"Out Errors\", last(ifInDiscards) AS \"In Discards\", last(ifOutDiscards) AS \"Out Discards\" FROM telegraf_interface_stats WHERE $timeFilter AND ifDescr =~ /Ethernet/ GROUP BY hostname, ifDescr",
+          "query": "SELECT last(ifOperStatus) AS \"Status\", last(ifInOctets) AS \"Inbound (Bytes)\", last(ifOutOctets) AS \"Outbound (Bytes)\", last(ifInErrors) AS \"In Errors\", last(ifOutErrors) AS \"Out Errors\", last(ifInDiscards) AS \"In Discards\", last(ifOutDiscards) AS \"Out Discards\" FROM telegraf_interface_stats WHERE $timeFilter AND hostname =~ /^$device$/ AND ifDescr =~ /Ethernet|Management|Tunnel/ GROUP BY hostname, ifDescr",
           "rawQuery": true,
           "refId": "A"
         }
@@ -623,155 +806,26 @@
                 "id": "mappings",
                 "value": [
                   {
-                    "type": "value",
                     "options": {
                       "1": {
-                        "text": "\ud83d\udfe2 UP",
-                        "color": "green"
-                      },
-                      "2": {
-                        "text": "\ud83d\udd34 DOWN",
-                        "color": "red"
+                        "color": "green",
+                        "index": 0,
+                        "text": "UP"
                       }
-                    }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "2": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "DOWN"
+                      }
+                    },
+                    "type": "value"
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Inbound (Bytes)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Outbound (Bytes)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "In Errors"
-            },
-            "properties": [
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "red",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Out Errors"
-            },
-            "properties": [
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "red",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "In Discards"
-            },
-            "properties": [
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Out Discards"
-            },
-            "properties": [
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
               }
             ]
           }
@@ -780,20 +834,118 @@
     },
     {
       "id": 14,
-      "title": "Real-Time Interface Error & Discard Counter Trends",
+      "title": "Real-Time Interface Error & Discard Counter Trends - $device",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
-        "w": 9,
-        "x": 15,
-        "y": 26
+        "w": 10,
+        "x": 14,
+        "y": 29
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT non_negative_derivative(mean(ifInErrors), 10s) AS \"In Errors\", non_negative_derivative(mean(ifOutErrors), 10s) AS \"Out Errors\", non_negative_derivative(mean(ifInDiscards), 10s) AS \"In Discards\", non_negative_derivative(mean(ifOutDiscards), 10s) AS \"Out Discards\" FROM telegraf_interface_stats WHERE $timeFilter AND ifDescr =~ /Ethernet/ GROUP BY time($__interval), hostname fill(0)",
+          "query": "SELECT non_negative_derivative(mean(ifInErrors), 10s) AS \"In Errors\", non_negative_derivative(mean(ifOutErrors), 10s) AS \"Out Errors\", non_negative_derivative(mean(ifInDiscards), 10s) AS \"In Discards\", non_negative_derivative(mean(ifOutDiscards), 10s) AS \"Out Discards\" FROM telegraf_interface_stats WHERE $timeFilter AND hostname =~ /^$device$/ AND ifDescr =~ /Ethernet|Management|Tunnel/ GROUP BY time($__interval), hostname fill(0)",
           "rawQuery": true,
           "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 500,
+      "title": "Control Plane, Routing & Telemetry Deep-Dive ($device)",
+      "type": "row"
+    },
+    {
+      "id": 502,
+      "title": "Control Plane: OSPF Adjacency & Route Capacity - $device",
+      "type": "stat",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 38
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(ospf_neighbors) AS \"OSPF Neighbors\" FROM device_telemetry WHERE hostname =~ /^$device$/",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT last(route_entries) AS \"Active Routes (RIB)\" FROM device_telemetry WHERE hostname =~ /^$device$/",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 503,
+      "title": "Real-Time CPU & Memory Utilization History - $device",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 18,
+        "x": 6,
+        "y": 38
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT mean(cpu_utilization) AS \"CPU %\" FROM device_telemetry WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY time($__interval), hostname fill(linear)",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT mean(mem_pct) AS \"Memory %\" FROM device_telemetry WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY time($__interval), hostname fill(linear)",
+          "rawQuery": true,
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -805,173 +957,6 @@
             "showPoints": "auto",
             "fillOpacity": 15
           },
-          "unit": "short",
-          "min": 0
-        }
-      }
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 34
-      },
-      "id": 500,
-      "title": "R6 ZTP Router Telemetry & Observability (CPU, Memory, Interface Counters, Routes & Adjacencies)",
-      "type": "row"
-    },
-    {
-      "id": 501,
-      "title": "R6 Live CPU & Memory Usage (%)",
-      "type": "gauge",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 35
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(cpu_utilization) AS \"CPU Utilization\" FROM r6_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "A"
-        },
-        {
-          "query": "SELECT last(mem_pct) AS \"Memory Utilization\" FROM r6_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
-          "unit": "percent"
-        }
-      },
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      }
-    },
-    {
-      "id": 502,
-      "title": "R6 Control Plane: OSPF Adjacency & Route Capacity",
-      "type": "stat",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 6,
-        "y": 35
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(ospf_neighbors) AS \"OSPF Neighbors\" FROM r6_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "A"
-        },
-        {
-          "query": "SELECT last(route_entries) AS \"Active Routes (RIB)\" FROM r6_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      }
-    },
-    {
-      "id": 503,
-      "title": "R6 Real-Time CPU & Memory Utilization History",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 35
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT mean(cpu_utilization) AS \"CPU %\" FROM r6_telemetry WHERE  GROUP BY time() fill(linear)",
-          "rawQuery": true,
-          "refId": "A"
-        },
-        {
-          "query": "SELECT mean(mem_pct) AS \"Memory %\" FROM r6_telemetry WHERE  GROUP BY time() fill(linear)",
-          "rawQuery": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 15
-          },
           "unit": "percent",
           "min": 0,
           "max": 100
@@ -980,18 +965,18 @@
     },
     {
       "id": 504,
-      "title": "R6 Live Interface Counters & Port Statistics",
+      "title": "Live Port Statistics & Line Protocol Status - $device",
       "type": "table",
       "gridPos": {
-        "h": 7,
-        "w": 12,
+        "h": 8,
+        "w": 24,
         "x": 0,
-        "y": 41
+        "y": 44
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT last(oper_status) AS \"Status\", last(in_octets) AS \"Inbound (Bytes)\", last(out_octets) AS \"Outbound (Bytes)\", last(in_errors) AS \"In Errors\", last(out_errors) AS \"Out Errors\" FROM r6_interface_counters WHERE  GROUP BY interface",
+          "query": "SELECT last(oper_status) AS \"Status\", last(in_octets) AS \"Inbound (Bytes)\", last(out_octets) AS \"Outbound (Bytes)\", last(in_errors) AS \"In Errors\", last(out_errors) AS \"Out Errors\" FROM device_interface_counters WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname, interface",
           "rawQuery": true,
           "refId": "A"
         }
@@ -1014,43 +999,26 @@
                 "id": "mappings",
                 "value": [
                   {
-                    "type": "value",
                     "options": {
                       "1": {
-                        "text": "\ud83d\udfe2 UP",
-                        "color": "green"
-                      },
-                      "2": {
-                        "text": "\ud83d\udd34 DOWN",
-                        "color": "red"
+                        "color": "green",
+                        "index": 0,
+                        "text": "UP"
                       }
-                    }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "2": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "DOWN"
+                      }
+                    },
+                    "type": "value"
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Inbound (Bytes)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Outbound (Bytes)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
               }
             ]
           }
@@ -1059,18 +1027,18 @@
     },
     {
       "id": 505,
-      "title": "R6 OSPF Neighbor Adjacency Matrix",
+      "title": "OSPF Neighbor Adjacency Matrix - $device",
       "type": "table",
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 41
+        "x": 0,
+        "y": 52
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT last(neighbor_router_id) AS \"Neighbor Router ID\", last(interface) AS \"Interface\", last(area) AS \"OSPF Area\", last(dr_state) AS \"DR State\", last(status) AS \"Adjacency State\" FROM r6_ospf_neighbors WHERE  GROUP BY neighbor_ip",
+          "query": "SELECT last(neighbor_router_id) AS \"Neighbor Router ID\", last(interface) AS \"Interface\", last(area) AS \"OSPF Area\", last(dr_state) AS \"DR State\", last(status) AS \"Adjacency State\" FROM device_ospf_neighbors WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname, neighbor_ip",
           "rawQuery": true,
           "refId": "A"
         }
@@ -1093,13 +1061,34 @@
                 "id": "mappings",
                 "value": [
                   {
-                    "type": "value",
                     "options": {
                       "FULL": {
-                        "text": "\ud83d\udfe2 FULL",
-                        "color": "green"
+                        "color": "green",
+                        "index": 0,
+                        "text": "FULL"
                       }
-                    }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "2WAYS": {
+                        "color": "blue",
+                        "index": 1,
+                        "text": "2WAY"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "DOWN": {
+                        "color": "red",
+                        "index": 2,
+                        "text": "DOWN"
+                      }
+                    },
+                    "type": "value"
                   }
                 ]
               }
@@ -1110,370 +1099,22 @@
     },
     {
       "id": 506,
-      "title": "R6 Routing Information Base (RIB) Entries & Next-Hops",
+      "title": "Routing Information Base (RIB) Entries & Next-Hops - $device",
       "type": "table",
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 48
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(nexthop) AS \"Next-Hop Address\", last(protocol) AS \"Protocol / Type\", last(interface) AS \"Outgoing Interface\", last(metric) AS \"Metric\" FROM r6_route_entries WHERE  GROUP BY destination",
-          "rawQuery": true,
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 56
-      },
-      "id": 600,
-      "title": "R7 ZTP Router Telemetry & Observability (CPU, Memory, Interface Counters, Routes & Adjacencies)",
-      "type": "row"
-    },
-    {
-      "id": 601,
-      "title": "R7 Live CPU & Memory Usage (%)",
-      "type": "gauge",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 57
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(cpu_utilization) AS \"CPU Utilization\" FROM r7_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "A"
-        },
-        {
-          "query": "SELECT last(mem_pct) AS \"Memory Utilization\" FROM r7_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
-          "unit": "percent"
-        }
-      },
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      }
-    },
-    {
-      "id": 602,
-      "title": "R7 Control Plane: OSPF Adjacency & Route Capacity",
-      "type": "stat",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 6,
-        "y": 57
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(ospf_neighbors) AS \"OSPF Neighbors\" FROM r7_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "A"
-        },
-        {
-          "query": "SELECT last(route_entries) AS \"Active Routes (RIB)\" FROM r7_telemetry WHERE ",
-          "rawQuery": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      }
-    },
-    {
-      "id": 603,
-      "title": "R7 Real-Time CPU & Memory Utilization History",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 6,
         "w": 12,
         "x": 12,
-        "y": 57
+        "y": 52
       },
       "datasource": "NMAS Data Lake (InfluxDB)",
       "targets": [
         {
-          "query": "SELECT mean(cpu_utilization) AS \"CPU %\" FROM r7_telemetry WHERE  GROUP BY time() fill(linear)",
-          "rawQuery": true,
-          "refId": "A"
-        },
-        {
-          "query": "SELECT mean(mem_pct) AS \"Memory %\" FROM r7_telemetry WHERE  GROUP BY time() fill(linear)",
-          "rawQuery": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 15
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        }
-      }
-    },
-    {
-      "id": 604,
-      "title": "R7 Live Interface Counters & Port Statistics",
-      "type": "table",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 63
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(oper_status) AS \"Status\", last(in_octets) AS \"Inbound (Bytes)\", last(out_octets) AS \"Outbound (Bytes)\", last(in_errors) AS \"In Errors\", last(out_errors) AS \"Out Errors\" FROM r7_interface_counters WHERE  GROUP BY interface",
-          "rawQuery": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Status"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "1": {
-                        "text": "\ud83d\udfe2 UP",
-                        "color": "green"
-                      },
-                      "2": {
-                        "text": "\ud83d\udd34 DOWN",
-                        "color": "red"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Inbound (Bytes)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Outbound (Bytes)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 605,
-      "title": "R7 OSPF Neighbor Adjacency Matrix",
-      "type": "table",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 63
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(neighbor_router_id) AS \"Neighbor Router ID\", last(interface) AS \"Interface\", last(area) AS \"OSPF Area\", last(dr_state) AS \"DR State\", last(status) AS \"Adjacency State\" FROM r7_ospf_neighbors WHERE  GROUP BY neighbor_ip",
-          "rawQuery": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Adjacency State"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "FULL": {
-                        "text": "\ud83d\udfe2 FULL",
-                        "color": "green"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 606,
-      "title": "R7 Routing Information Base (RIB) Entries & Next-Hops",
-      "type": "table",
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 70
-      },
-      "datasource": "NMAS Data Lake (InfluxDB)",
-      "targets": [
-        {
-          "query": "SELECT last(nexthop) AS \"Next-Hop Address\", last(protocol) AS \"Protocol / Type\", last(interface) AS \"Outgoing Interface\", last(metric) AS \"Metric\" FROM r7_route_entries WHERE  GROUP BY destination",
+          "query": "SELECT last(nexthop) AS \"Next-Hop Address\", last(protocol) AS \"Protocol / Type\", last(interface) AS \"Outgoing Interface\", last(metric) AS \"Metric\" FROM device_route_entries WHERE $timeFilter AND hostname =~ /^$device$/ GROUP BY hostname, destination",
           "rawQuery": true,
           "refId": "A"
         }
       ]
     }
-  ],
-  "refresh": "5s",
-  "schemaVersion": 38,
-  "style": "dark",
-  "tags": [
-    "nmas",
-    "telegraf",
-    "influxdb",
-    "snmp"
-  ],
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ]
-  },
-  "timezone": "browser",
-  "title": "NMAS Network Operations & Data Lake Dashboard",
-  "uid": "nmas-noc-master",
-  "version": 4
+  ]
 }
