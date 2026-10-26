@@ -2,7 +2,7 @@ hostname: r6
 vendor: arista
 tier: distribution
 device_type: router
-role: ZTP Edge Router (OSPF Area 10 to R4)
+role: ZTP Edge Router (OSPF Area 10 to R4 & Area 20 to R7)
 mgmt_ip: 172.20.20.16/24
 mgmt_ipv6: 2001:db8:ffff::15/64
 private_ip: 10.46.46.100
@@ -19,4 +19,10 @@ interfaces:
   ip: 10.46.46.100/24
   ospf_area: 0.0.0.10
   description: Uplink to R4 Ethernet3
+- name: Ethernet2
+  cisco_name: GigabitEthernet0/0/0/1
+  sonic_name: Ethernet1
+  ip: 10.67.67.6/24
+  ospf_area: 0.0.0.20
+  description: Downlink to R7 Ethernet1
 subinterfaces: []

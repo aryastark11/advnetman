@@ -1126,6 +1126,323 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "id": 600,
+      "title": "R7 ZTP Router Telemetry & Observability (CPU, Memory, Interface Counters, Routes & Adjacencies)",
+      "type": "row"
+    },
+    {
+      "id": 601,
+      "title": "R7 Live CPU & Memory Usage (%)",
+      "type": "gauge",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 57
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(cpu_utilization) AS \"CPU Utilization\" FROM r7_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT last(mem_pct) AS \"Memory Utilization\" FROM r7_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "id": 602,
+      "title": "R7 Control Plane: OSPF Adjacency & Route Capacity",
+      "type": "stat",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 57
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(ospf_neighbors) AS \"OSPF Neighbors\" FROM r7_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT last(route_entries) AS \"Active Routes (RIB)\" FROM r7_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 603,
+      "title": "R7 Real-Time CPU & Memory Utilization History",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 57
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT mean(cpu_utilization) AS \"CPU %\" FROM r7_telemetry WHERE  GROUP BY time() fill(linear)",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT mean(mem_pct) AS \"Memory %\" FROM r7_telemetry WHERE  GROUP BY time() fill(linear)",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": 604,
+      "title": "R7 Live Interface Counters & Port Statistics",
+      "type": "table",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 63
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(oper_status) AS \"Status\", last(in_octets) AS \"Inbound (Bytes)\", last(out_octets) AS \"Outbound (Bytes)\", last(in_errors) AS \"In Errors\", last(out_errors) AS \"Out Errors\" FROM r7_interface_counters WHERE  GROUP BY interface",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "\ud83d\udfe2 UP",
+                        "color": "green"
+                      },
+                      "2": {
+                        "text": "\ud83d\udd34 DOWN",
+                        "color": "red"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Inbound (Bytes)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Outbound (Bytes)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 605,
+      "title": "R7 OSPF Neighbor Adjacency Matrix",
+      "type": "table",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 63
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(neighbor_router_id) AS \"Neighbor Router ID\", last(interface) AS \"Interface\", last(area) AS \"OSPF Area\", last(dr_state) AS \"DR State\", last(status) AS \"Adjacency State\" FROM r7_ospf_neighbors WHERE  GROUP BY neighbor_ip",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Adjacency State"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "FULL": {
+                        "text": "\ud83d\udfe2 FULL",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 606,
+      "title": "R7 Routing Information Base (RIB) Entries & Next-Hops",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(nexthop) AS \"Next-Hop Address\", last(protocol) AS \"Protocol / Type\", last(interface) AS \"Outgoing Interface\", last(metric) AS \"Metric\" FROM r7_route_entries WHERE  GROUP BY destination",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ]
     }
   ],
   "refresh": "5s",
@@ -1158,5 +1475,5 @@
   "timezone": "browser",
   "title": "NMAS Network Operations & Data Lake Dashboard",
   "uid": "nmas-noc-master",
-  "version": 3
+  "version": 4
 }

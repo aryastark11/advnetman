@@ -18,6 +18,20 @@ dhcp_server:
   range_end: 10.10.20.200
   default_gateway: 10.10.20.1
   dns_server: 198.51.100.10
+- subnet: 10.46.46.0/24
+  range_start: 10.46.46.100
+  range_end: 10.46.46.150
+  default_gateway: 10.46.46.4
+  dns_server: 198.51.100.10
+  tftp_server: 10.46.46.4
+  boot_file: r6.cfg
+- subnet: 10.67.67.0/24
+  range_start: 10.67.67.100
+  range_end: 10.67.67.150
+  default_gateway: 10.67.67.6
+  dns_server: 198.51.100.10
+  tftp_server: 10.46.46.4
+  boot_file: r7.cfg
 - subnet_v6: 2001:db8:10::/64
   range_start: 2001:db8:10::100
   range_end: 2001:db8:10::200

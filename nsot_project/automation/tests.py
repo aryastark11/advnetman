@@ -234,13 +234,20 @@ class DeviceCRUDViewTests(TestCase):
             'routing_protocols': 'OSPF',
             'bgp_asn': '65001',
             'router_id': '10.10.10.6',
-            'custom_config_yaml': 'hostname: R6'
+            'custom_config_yaml': 'hostname: R6\nmgmt_ip: 172.20.20.16'
         }
         response = self.client.post(reverse('add_device'), data=payload)
         self.assertEqual(response.status_code, 302)
         created_dev = Device.objects.filter(name='R6').first()
         self.assertIsNotNone(created_dev)
         self.assertEqual(created_dev.bgp_asn, 65001)
+        # Clean up test file if created
+        test_yml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data_models", "R6.yml")
+        if os.path.exists(test_yml):
+            try:
+                os.remove(test_yml)
+            except OSError:
+                pass
 
     def test_add_device_post_missing_name_negative(self):
         """Negative Test: POST `/device/add/` with empty name fails validation and re-renders form."""

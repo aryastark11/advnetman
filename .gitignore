@@ -21,3 +21,6 @@ vault/certs/*.csr
 secrets/
 *.secret
 .coverage
+Lab8-ZTPandIaC.docx
+golden_configs/*_v2026*.cfg
+nsot_project/media/

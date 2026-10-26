@@ -43,6 +43,11 @@ topology:
       image: ceos:latest
       mgmt-ipv4: 172.20.20.16
 
+    r7:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.17
+
     # Arista cEOS Switches
     s1:
       kind: arista_ceos
@@ -157,3 +162,6 @@ topology:
 
     # Expansion (OSPF Area 10)
     - endpoints: ["r4:eth3", "r6:eth1"]
+
+    # Expansion (OSPF Area 20)
+    - endpoints: ["r6:eth2", "r7:eth1"]
