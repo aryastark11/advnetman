@@ -23,7 +23,7 @@
       "keepTime": false,
       "tags": [],
       "targetBlank": false,
-      "title": "🏠 Back to Django NSoT GUI",
+      "title": "\ud83c\udfe0 Back to Django NSoT GUI",
       "tooltip": "Navigate back to Django NSoT Network Management Portal (http://localhost:8000)",
       "type": "link",
       "url": "http://localhost:8000"
@@ -43,7 +43,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #0b1120, #131d31); border:1px solid #27354f; border-radius:8px; padding:10px 20px;\"><div style=\"display:flex; align-items:center; gap:12px;\"><div style=\"background:linear-gradient(135deg, #06b6d4, #3b82f6); width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff;\">RC</div><div><span style=\"font-size:16px; font-weight:700; color:#f1f5f9;\">NMAS Telemetry & Network Observability Operations</span><br/><span style=\"font-size:11px; color:#94a3b8;\">Telegraf & InfluxDB Data Lake Engine</span></div></div><div><a href=\"http://localhost:8000\" target=\"_self\" style=\"display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg, #06b6d4, #3b82f6); color:#ffffff; font-weight:600; font-size:13px; padding:8px 18px; border-radius:6px; text-decoration:none; box-shadow:0 4px 12px rgba(6,182,212,0.35);\"><span>🏠 Back to Django NSoT GUI</span></a></div></div>"
+        "content": "<div style=\"display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #0b1120, #131d31); border:1px solid #27354f; border-radius:8px; padding:10px 20px;\"><div style=\"display:flex; align-items:center; gap:12px;\"><div style=\"background:linear-gradient(135deg, #06b6d4, #3b82f6); width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff;\">RC</div><div><span style=\"font-size:16px; font-weight:700; color:#f1f5f9;\">NMAS Telemetry & Network Observability Operations</span><br/><span style=\"font-size:11px; color:#94a3b8;\">Telegraf & InfluxDB Data Lake Engine</span></div></div><div><a href=\"http://localhost:8000\" target=\"_self\" style=\"display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg, #06b6d4, #3b82f6); color:#ffffff; font-weight:600; font-size:13px; padding:8px 18px; border-radius:6px; text-decoration:none; box-shadow:0 4px 12px rgba(6,182,212,0.35);\"><span>\ud83c\udfe0 Back to Django NSoT GUI</span></a></div></div>"
       },
       "transparent": true
     },
@@ -356,7 +356,7 @@
         "y": 5
       },
       "id": 200,
-      "title": "Telegraf SNMP Monitoring & Device Health (Routers R1-R5, Switches S1-S4)",
+      "title": "Telegraf SNMP Monitoring & Device Health (Routers R1-R6, Switches S1-S4)",
       "type": "row"
     },
     {
@@ -584,7 +584,7 @@
         "y": 25
       },
       "id": 400,
-      "title": "Live Interface Counters, Error Rates & Discards (Routers R1-R5, Switches S1-S4)",
+      "title": "Live Interface Counters, Error Rates & Discards (Routers R1-R6, Switches S1-S4)",
       "type": "row"
     },
     {
@@ -626,11 +626,11 @@
                     "type": "value",
                     "options": {
                       "1": {
-                        "text": "🟢 UP",
+                        "text": "\ud83d\udfe2 UP",
                         "color": "green"
                       },
                       "2": {
-                        "text": "🔴 DOWN",
+                        "text": "\ud83d\udd34 DOWN",
                         "color": "red"
                       }
                     }
@@ -809,6 +809,323 @@
           "min": 0
         }
       }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 500,
+      "title": "R6 ZTP Router Telemetry & Observability (CPU, Memory, Interface Counters, Routes & Adjacencies)",
+      "type": "row"
+    },
+    {
+      "id": 501,
+      "title": "R6 Live CPU & Memory Usage (%)",
+      "type": "gauge",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 35
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(cpu_utilization) AS \"CPU Utilization\" FROM r6_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT last(mem_pct) AS \"Memory Utilization\" FROM r6_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "id": 502,
+      "title": "R6 Control Plane: OSPF Adjacency & Route Capacity",
+      "type": "stat",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 35
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(ospf_neighbors) AS \"OSPF Neighbors\" FROM r6_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT last(route_entries) AS \"Active Routes (RIB)\" FROM r6_telemetry WHERE ",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 503,
+      "title": "R6 Real-Time CPU & Memory Utilization History",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 35
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT mean(cpu_utilization) AS \"CPU %\" FROM r6_telemetry WHERE  GROUP BY time() fill(linear)",
+          "rawQuery": true,
+          "refId": "A"
+        },
+        {
+          "query": "SELECT mean(mem_pct) AS \"Memory %\" FROM r6_telemetry WHERE  GROUP BY time() fill(linear)",
+          "rawQuery": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": 504,
+      "title": "R6 Live Interface Counters & Port Statistics",
+      "type": "table",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 41
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(oper_status) AS \"Status\", last(in_octets) AS \"Inbound (Bytes)\", last(out_octets) AS \"Outbound (Bytes)\", last(in_errors) AS \"In Errors\", last(out_errors) AS \"Out Errors\" FROM r6_interface_counters WHERE  GROUP BY interface",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "\ud83d\udfe2 UP",
+                        "color": "green"
+                      },
+                      "2": {
+                        "text": "\ud83d\udd34 DOWN",
+                        "color": "red"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Inbound (Bytes)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Outbound (Bytes)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 505,
+      "title": "R6 OSPF Neighbor Adjacency Matrix",
+      "type": "table",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 41
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(neighbor_router_id) AS \"Neighbor Router ID\", last(interface) AS \"Interface\", last(area) AS \"OSPF Area\", last(dr_state) AS \"DR State\", last(status) AS \"Adjacency State\" FROM r6_ospf_neighbors WHERE  GROUP BY neighbor_ip",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Adjacency State"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "FULL": {
+                        "text": "\ud83d\udfe2 FULL",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 506,
+      "title": "R6 Routing Information Base (RIB) Entries & Next-Hops",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "datasource": "NMAS Data Lake (InfluxDB)",
+      "targets": [
+        {
+          "query": "SELECT last(nexthop) AS \"Next-Hop Address\", last(protocol) AS \"Protocol / Type\", last(interface) AS \"Outgoing Interface\", last(metric) AS \"Metric\" FROM r6_route_entries WHERE  GROUP BY destination",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ]
     }
   ],
   "refresh": "5s",
@@ -841,5 +1158,5 @@
   "timezone": "browser",
   "title": "NMAS Network Operations & Data Lake Dashboard",
   "uid": "nmas-noc-master",
-  "version": 2
+  "version": 3
 }

@@ -29,6 +29,7 @@ DEVICE_SPECS = {
     "R3": {"template": "r3_r4.j2", "data_model": "r3.yml", "mgmt_ip": "172.20.20.13", "tier": "asbr_core"},
     "R4": {"template": "r3_r4.j2", "data_model": "r4.yml", "mgmt_ip": "172.20.20.14", "tier": "asbr_core"},
     "R5": {"template": "r5.j2",    "data_model": "r5.yml", "mgmt_ip": "172.20.20.15", "tier": "pe_wan"},
+    "R6": {"template": "r1_r2.j2", "data_model": "r6.yml", "mgmt_ip": "172.20.20.16", "tier": "distribution"},
     "S1": {"template": "s1_s2.j2", "data_model": "s1.yml", "mgmt_ip": "172.20.20.21", "tier": "access_switch"},
     "S2": {"template": "s1_s2.j2", "data_model": "s2.yml", "mgmt_ip": "172.20.20.22", "tier": "access_switch"},
     "S3": {"template": "s3_s4.j2", "data_model": "s3.yml", "mgmt_ip": "172.20.20.23", "tier": "core_switch"},

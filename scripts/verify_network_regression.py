@@ -278,6 +278,10 @@ def run_regression_suite(markdown_path=None, json_path=None):
     r3_rib, r3_rib_err = get_router_json("clab-lab1-r3", "show ip route")
     r3_routes = r3_rib.get("vrfs", {}).get("default", {}).get("routes", {}) if r3_rib else {}
 
+    # Fetch R6 Route Table
+    r6_rib, r6_rib_err = get_router_json("clab-lab1-r6", "show ip route")
+    r6_routes = r6_rib.get("vrfs", {}).get("default", {}).get("routes", {}) if r6_rib else {}
+
     # Fetch S1 Route Table
     s1_rib, s1_rib_err = get_router_json("clab-lab1-s1", "show ip route")
     s1_vrf = s1_rib.get("vrfs", {}).get("default", {}) if s1_rib else {}
@@ -333,6 +337,14 @@ def run_regression_suite(markdown_path=None, json_path=None):
     runner.test("Control Plane RIB", "R3 Border ECMP Multipath (10.10.10.0/24 -> R1 & R2)", "Positive", check_r3_ecmp_subnets,
                 "Asserts Border Router R3 maintains Equal-Cost Multi-Path (ECMP) routing across both Core routers.")
 
+    # Positive: R6 Core Subnets via OSPF Area 10
+    def check_r6_core_route():
+        route = r6_routes.get("10.0.0.0/24")
+        passed = bool(route and "ospf" in route.get("routeType", "").lower())
+        return passed, "10.0.0.0/24 learned on R6 via OSPF Area 10 from R4" if passed else f"Core route missing on R6: {route}"
+    runner.test("Control Plane RIB", "R6 Core Subnet (10.0.0.0/24 via OSPF Area 10)", "Positive", check_r6_core_route,
+                "Asserts ZTP Router R6 receives Area 0 core routes via OSPF Area 10 from R4.")
+
     # Negative: R1 Bogus Route Absence
     def check_r1_bogus_route_absence():
         bogus_prefix = "10.99.99.0/24"
@@ -372,6 +384,10 @@ def run_regression_suite(markdown_path=None, json_path=None):
     r1_ospf, r1_ospf_err = get_router_json("clab-lab1-r1", "show ip ospf neighbor")
     r1_ospf_nbrs = r1_ospf.get("vrfs", {}).get("default", {}).get("instList", {}).get("1", {}).get("ospfNeighborEntries", []) if r1_ospf else []
 
+    # Fetch R6 OSPF Neighbors
+    r6_ospf, r6_ospf_err = get_router_json("clab-lab1-r6", "show ip ospf neighbor")
+    r6_ospf_nbrs = r6_ospf.get("vrfs", {}).get("default", {}).get("instList", {}).get("1", {}).get("ospfNeighborEntries", []) if r6_ospf else []
+
     # Fetch R1 VRRP
     r1_vrrp, r1_vrrp_err = get_router_json("clab-lab1-r1", "show vrrp")
     r1_vrouters = r1_vrrp.get("virtualRouters", []) if r1_vrrp else []
@@ -403,6 +419,14 @@ def run_regression_suite(markdown_path=None, json_path=None):
         return passed, "OSPF adjacency with R3 (10.0.0.3) is in FULL state" if passed else f"OSPF state not full: {nbr}"
     runner.test("Protocol Adjacencies & HA", "OSPF Area 0 Neighbor R3 (10.0.0.3 FULL)", "Positive", check_r1_ospf_r3,
                 "Asserts Core Router R1 maintains Full OSPF adjacency with Border Router R3.")
+
+    # Positive: R6 OSPF Neighbor R4 Full
+    def check_r6_ospf_r4():
+        nbr = next((n for n in r6_ospf_nbrs if n.get("routerId") == "10.0.0.4"), None)
+        passed = bool(nbr and nbr.get("adjacencyState") == "full")
+        return passed, "OSPF Area 10 adjacency with R4 (10.0.0.4) is in FULL state on Ethernet1" if passed else f"R6 OSPF state not full: {nbr}"
+    runner.test("Protocol Adjacencies & HA", "OSPF Area 10 Neighbor R4 (10.0.0.4 FULL on R6)", "Positive", check_r6_ospf_r4,
+                "Asserts Edge Router R6 maintains Full OSPF Area 10 adjacency with Border Router R4.")
 
     # Positive: R1 VRRP Groups Master
     def check_r1_vrrp_master():

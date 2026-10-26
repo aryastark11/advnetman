@@ -170,6 +170,8 @@ def main():
                 "docker exec clab-lab1-r1 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q 'FULL'")
     runner.test("Control Plane - OSPF", "OSPF Area 0 Neighbor Adjacencies on R2 (FULL)",
                 "docker exec clab-lab1-r2 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q 'FULL'")
+    runner.test("Control Plane - OSPF", "OSPF Area 10 Neighbor Adjacency on R6 (FULL to R4)",
+                "docker exec clab-lab1-r6 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q 'FULL'")
     runner.test("Control Plane - RIP", "RIPv2 Route Database on R1 Contains Subnets",
                 "docker exec clab-lab1-r1 FastCli -p 15 -c 'show ip rip database' | grep -q '10.10.'")
 
@@ -184,6 +186,8 @@ def main():
     print("\n--- 4.5 Security & Automation: eAPI Command-API & 2FA Health ---")
     runner.test("Security & Management", "eAPI HTTP Command-API Active on R1",
                 "docker exec clab-lab1-r1 FastCli -p 15 -c 'show management api http-commands' | grep -i -E 'Enabled:\\s+Yes'")
+    runner.test("Security & Management", "eAPI HTTP Command-API Active on R6",
+                "docker exec clab-lab1-r6 FastCli -p 15 -c 'show management api http-commands' | grep -i -E 'Enabled:\\s+Yes'")
     runner.test("Security & Management", "FreeRADIUS 2FA Daemon Running",
                 "systemctl is-active freeradius || true")
     runner.test("Security & Management", "PrivacyIDEA REST Service Running on Port 5000",
@@ -195,6 +199,8 @@ def main():
                 "curl -s -m 3 http://localhost:8086/ping")
     runner.test("Observability", "Grafana NOC Master Dashboard Active on Port 3000",
                 "curl -s -m 3 -o /dev/null -w '%{http_code}' http://localhost:3000/d/nmas-noc-master | grep -q '200'")
+    runner.test("Observability", "R6 Telemetry Ingestion Active in InfluxDB Data Lake",
+                "curl -s 'http://localhost:8086/query?db=nmas_datalake' --data-urlencode \"q=SELECT count(cpu_utilization) FROM r6_telemetry WHERE time > now() - 1m\" | grep -q '\"values\":'")
 
     all_passed = runner.print_summary(markdown_path=args.markdown)
 

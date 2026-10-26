@@ -27,6 +27,7 @@ DEVICE_MAP = {
     "R3": {"mgmt_ip": "172.20.20.13", "tier": "asbr_core"},
     "R4": {"mgmt_ip": "172.20.20.14", "tier": "asbr_core"},
     "R5": {"mgmt_ip": "172.20.20.15", "tier": "pe_wan"},
+    "R6": {"mgmt_ip": "172.20.20.16", "tier": "distribution"},
     "S1": {"mgmt_ip": "172.20.20.21", "tier": "access_switch"},
     "S2": {"mgmt_ip": "172.20.20.22", "tier": "access_switch"},
     "S3": {"mgmt_ip": "172.20.20.23", "tier": "core_switch"},

@@ -74,6 +74,7 @@ def validate_jinja2_templates():
         ("Arista EOS", ARISTA_DIR, "r3_r4.j2", "r3.yml"),
         ("Arista EOS", ARISTA_DIR, "r3_r4.j2", "r4.yml"),
         ("Arista EOS", ARISTA_DIR, "r5.j2", "r5.yml"),
+        ("Arista EOS", ARISTA_DIR, "r1_r2.j2", "r6.yml"),
         ("Arista EOS", ARISTA_DIR, "s1_s2.j2", "s1.yml"),
         ("Arista EOS", ARISTA_DIR, "s1_s2.j2", "s2.yml"),
         ("Arista EOS", ARISTA_DIR, "s3_s4.j2", "s3.yml"),

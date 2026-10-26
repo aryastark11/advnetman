@@ -38,6 +38,11 @@ topology:
       mgmt-ipv4: 172.20.20.15
       startup-config: configs/ceos/r5.cfg
 
+    r6:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.16
+
     # Arista cEOS Switches
     s1:
       kind: arista_ceos
@@ -149,3 +154,6 @@ topology:
 
     # NMAS Dedicated Private Backup Link (Accessible ONLY by NMAS)
     - endpoints: ["nmas:eth2", "backup-server:eth1"]
+
+    # Expansion (OSPF Area 10)
+    - endpoints: ["r4:eth3", "r6:eth1"]
