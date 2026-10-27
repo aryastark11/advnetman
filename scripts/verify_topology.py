@@ -33,6 +33,8 @@ results.append(test("H3 (VLAN 10) -> Web Server IPv4 Ping", "docker exec clab-la
 results.append(test("H3 (VLAN 10) -> Web Server HTTP GET", "docker exec clab-lab1-h3 curl -s -m 3 http://198.51.100.10 | grep -q 'Hello World'"))
 results.append(test("H4 (VLAN 30: IPv6 Only) -> Web Server IPv6 Ping", "docker exec clab-lab1-h4 ping6 -c 2 -W 2 2001:db8:100::10"))
 results.append(test("H4 (VLAN 30: IPv6 Only) -> Web Server HTTP GET (IPv6)", "docker exec clab-lab1-h4 curl -6 -s -m 3 http://[2001:db8:100::10] | grep -q 'Hello World'"))
+results.append(test("H5 (VLAN 10: R7 Subnet) -> Web Server IPv4 Ping", "docker exec clab-lab1-h5 ping -c 2 -W 2 198.51.100.10"))
+results.append(test("H5 (VLAN 10: R7 Subnet) -> Web Server HTTP GET", "docker exec clab-lab1-h5 curl -s -m 3 http://198.51.100.10 | grep -q 'Hello World'"))
 
 print("\n--- 2. INTER-VLAN & INTRA-VLAN CONNECTIVITY ---")
 results.append(test("H1 (VLAN 10) <-> H3 (VLAN 10) Intra-VLAN Ping", "docker exec clab-lab1-h1 ping -c 2 -W 2 10.10.10.103"))
