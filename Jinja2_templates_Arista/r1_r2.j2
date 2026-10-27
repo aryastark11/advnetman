@@ -67,6 +67,10 @@ interface {{ sub.parent }}.{{ sub.sub_id }}
    ipv6 enable
    ipv6 address {{ sub.ipv6 }}
 {% endif %}
+{% if sub.ospf_area is defined %}
+   ip ospf area {{ sub.ospf_area }}
+   ipv6 ospf 1 area {{ sub.ospf_area }}
+{% endif %}
 !
 {% endfor %}
 interface Management1

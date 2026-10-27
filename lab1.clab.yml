@@ -106,6 +106,14 @@ topology:
         - configs/h4/start.sh:/start.sh
       cmd: /bin/bash /start.sh
 
+    h5:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.35
+      binds:
+        - configs/h5/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
     web-server:
       kind: linux
       image: lab-web:latest
@@ -165,3 +173,4 @@ topology:
 
     # Expansion (OSPF Area 20)
     - endpoints: ["r6:eth2", "r7:eth1"]
+    - endpoints: ["r7:eth2", "h5:eth1"]

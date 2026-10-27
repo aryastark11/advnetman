@@ -1,0 +1,11 @@
+hostname: h5
+vendor: linux
+device_type: host
+role: End Host (VLAN 10 - R7 Subnet)
+mgmt_ip: 172.20.20.35/24
+private_ip: 10.70.10.105/24
+ipv6: 2001:db8:70:10::105/64
+default_gateway: 10.70.10.1
+default_gateway_v6: 2001:db8:70:10::1
+vlan_id: 10
+dns: 198.51.100.10
