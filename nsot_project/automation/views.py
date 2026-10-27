@@ -61,6 +61,10 @@ def pull_live_config_from_node(device):
             if os.path.exists(cfg_path):
                 with open(cfg_path, "r") as f:
                     return True, f"! [Fallback from Local Storage]\n" + f.read()
+            cfg_path2 = os.path.join(BASE_DIR, "configs", name, "running-config.cfg")
+            if os.path.exists(cfg_path2):
+                with open(cfg_path2, "r") as f:
+                    return True, f"! [Fallback from Local Storage]\n" + f.read()
             return False, f"Failed to pull live eAPI config: {str(e)}"
     
     elif device.vendor in ['cisco_nxos', 'cisco_xrv', 'sonic']:
@@ -79,6 +83,14 @@ def pull_live_config_from_node(device):
             return True, f"! [Simulated Running Config - {device.get_vendor_display()}]\n" + rendered
         except Exception as e:
             return False, f"Render error: {str(e)}"
+
+    else:
+        # Linux Hosts / NMAS / Web Server / Backup Server
+        start_sh_path = os.path.join(BASE_DIR, "configs", name, "start.sh")
+        if os.path.exists(start_sh_path):
+            with open(start_sh_path, "r") as f:
+                return True, f"#!/bin/bash\n# Live Container Startup Configuration for {name}\n\n" + f.read()
+        return True, f"# Host/Server: {name}\n# IP: {device.private_ip}\n# Mgmt: {device.mgmt_ip}\n# Status: Online\n"
 
 def check_device_live_status(device):
     """
@@ -162,6 +174,8 @@ def dashboard_view(request):
         devices = devices.filter(name__icontains=search_query)
 
     total_devices = Device.objects.filter(device_type__in=['router', 'switch']).count()
+    router_count = Device.objects.filter(device_type='router').count()
+    switch_count = Device.objects.filter(device_type='switch').count()
     online_count = Device.objects.filter(device_type__in=['router', 'switch'], status__in=['Online', 'Drained']).count()
     drained_count = Device.objects.filter(device_type__in=['router', 'switch'], status='Drained').count()
     golden_count = GoldenConfig.objects.filter(device__device_type__in=['router', 'switch']).count()
@@ -170,6 +184,8 @@ def dashboard_view(request):
     context = {
         'devices': devices,
         'total_devices': total_devices,
+        'router_count': router_count,
+        'switch_count': switch_count,
         'online_count': online_count,
         'drained_count': drained_count,
         'golden_count': golden_count,
@@ -497,6 +513,7 @@ def run_host_pings(count=2, target="198.51.100.10"):
         ('H2', 'clab-lab1-h2', '10.10.20.102', '198.51.100.10', False),
         ('H3', 'clab-lab1-h3', '10.10.10.103', '198.51.100.10', False),
         ('H4', 'clab-lab1-h4', '10.10.30.104', '198.51.100.10', False),
+        ('H5', 'clab-lab1-h5', '10.70.10.105', '198.51.100.10', False),
     ]
     
     results = []
@@ -1281,7 +1298,7 @@ def load_stage_details():
             "cmd": "python3 scripts/generate_and_diff_configs.py --markdown build/diff_report.md",
             "status": "passed",
             "elapsed": "1.46s",
-            "summary": "9 Candidate Configs Compiled • Live Running Diffs Computed",
+            "summary": "11 Candidate Configs Compiled • Live Running Diffs Computed",
             "log": "",
         },
         {
@@ -1290,7 +1307,7 @@ def load_stage_details():
             "cmd": "python3 scripts/deploy_device_configs.py --stagger 1.0",
             "status": "passed",
             "elapsed": "9.70s",
-            "summary": "9/9 Devices Pre-Checked & Deployed • 0 Failed Handshakes",
+            "summary": "11/11 Devices Pre-Checked & Deployed • 0 Failed Handshakes",
             "log": "",
         },
         {
@@ -1361,7 +1378,7 @@ def cicd_view(request):
         'status': 'Online',
         'labels': 'self-hosted, linux, x64, lab-runner',
         'service': 'actions.runner.aryastark11-advnetman.lab-runner-nmas.service (active)',
-        'target_devices': 'R1-R5, S1-S4',
+        'target_devices': 'R1-R7, S1-S4',
         'repo': 'aryastark11/advnetman'
     }
 

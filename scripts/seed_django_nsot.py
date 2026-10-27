@@ -71,7 +71,7 @@ for name, vendor, tier, path_dir, desc in templates_data:
         )
         print(f"[TEMPLATE] {'Created' if created else 'Updated'}: [{vendor.upper()}] {name}")
 
-# 2. Seed All 16 Devices
+# 2. Seed All Network Devices
 raw_devices = [
     # Routers
     {"name": "r1", "type": "router", "vendor": "arista", "tier": "distribution", "role": "Distribution Router (VLAN 10/20 Routing, RIPv2, OSPF Area 0)", "mgmt_ip": "172.20.20.11/24", "private_ip": "10.0.0.1", "public_ip": None, "routing_protocols": "OSPF, RIPv2", "bgp_asn": None, "router_id": "10.0.0.1", "template_name": "r1_r2.j2"},
@@ -79,6 +79,8 @@ raw_devices = [
     {"name": "r3", "type": "router", "vendor": "arista", "tier": "asbr", "role": "Autonomous System Boundary Router (eBGP AS 65001 <-> 65005, OSPF A0)", "mgmt_ip": "172.20.20.13/24", "private_ip": "10.0.0.3", "public_ip": None, "routing_protocols": "BGP, OSPF", "bgp_asn": 65001, "router_id": "10.0.0.3", "template_name": "r3_r4.j2"},
     {"name": "r4", "type": "router", "vendor": "arista", "tier": "asbr", "role": "Autonomous System Boundary Router (eBGP AS 65001 <-> 65005, OSPF A0)", "mgmt_ip": "172.20.20.14/24", "private_ip": "10.0.0.4", "public_ip": None, "routing_protocols": "BGP, OSPF", "bgp_asn": 65001, "router_id": "10.0.0.4", "template_name": "r3_r4.j2"},
     {"name": "r5", "type": "router", "vendor": "arista", "tier": "pe_router", "role": "Provider Edge Router (AS 65005, Public DMZ Web Server Transit)", "mgmt_ip": "172.20.20.15/24", "private_ip": "172.16.35.2", "public_ip": "198.51.100.1", "routing_protocols": "BGP", "bgp_asn": 65005, "router_id": "198.51.100.1", "template_name": "r5.j2"},
+    {"name": "r6", "type": "router", "vendor": "arista", "tier": "distribution", "role": "ZTP Edge Router (OSPF Area 10 to R4 & Area 20 to R7)", "mgmt_ip": "172.20.20.16/24", "private_ip": "10.46.46.100", "public_ip": None, "routing_protocols": "OSPF", "bgp_asn": None, "router_id": "10.46.46.6", "template_name": "r1_r2.j2"},
+    {"name": "r7", "type": "router", "vendor": "arista", "tier": "distribution", "role": "ZTP Edge Router (OSPF Area 20 to R6 & VLAN 10 Gateway to H5)", "mgmt_ip": "172.20.20.17/24", "private_ip": "10.67.67.113", "public_ip": None, "routing_protocols": "OSPF", "bgp_asn": None, "router_id": "10.67.67.7", "vlans": "10", "template_name": "r1_r2.j2"},
     
     # Switches
     {"name": "s1", "type": "switch", "vendor": "arista", "tier": "access_switch", "role": "Access Switch (VLANs 10, 20, 30, Trunk to R1 & S2)", "mgmt_ip": "172.20.20.21/24", "private_ip": "172.20.20.21", "public_ip": None, "vlans": "10,20,30", "template_name": "s1_s2.j2"},
@@ -91,6 +93,7 @@ raw_devices = [
     {"name": "h2", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 20 Test Host", "mgmt_ip": "172.20.20.102/24", "private_ip": "10.10.20.102/24", "vlans": "20"},
     {"name": "h3", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host", "mgmt_ip": "172.20.20.103/24", "private_ip": "10.10.10.103/24", "vlans": "10"},
     {"name": "h4", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 30 IPv6-Only Test Host", "mgmt_ip": "172.20.20.104/24", "private_ip": "IPv6-Only (2001:db8:30::104/64)", "vlans": "30"},
+    {"name": "h5", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host (R7 Subnet)", "mgmt_ip": "172.20.20.35/24", "private_ip": "10.70.10.105/24", "vlans": "10"},
     
     # Management & Dedicated Servers
     {"name": "nmas", "type": "nmas", "vendor": "linux", "tier": "management", "role": "Network Management & Automation Station", "mgmt_ip": "172.20.20.100/24", "private_ip": "10.0.0.100/24"},

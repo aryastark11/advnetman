@@ -20,12 +20,12 @@ class Device(models.Model):
     ]
 
     TIERS = [
-        ('distribution', 'Tier 1: Distribution Routers (R1-R2)'),
+        ('distribution', 'Tier 1: Distribution Routers (R1-R2, R6-R7)'),
         ('asbr', 'Tier 2: ASBR Core Routers (R3-R4)'),
         ('pe_router', 'Tier 3: PE WAN Gateway (R5)'),
         ('access_switch', 'Tier 4: Access Switches (S1-S2)'),
         ('core_switch', 'Tier 5: Core Backbone Switches (S3-S4)'),
-        ('host', 'End Host (H1-H4)'),
+        ('host', 'End Host (H1-H5)'),
         ('management', 'Management & Automation'),
     ]
 

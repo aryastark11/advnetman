@@ -76,9 +76,9 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; gap: 8px; align-items: center;">
       <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">FILTER TYPE:</span>
-      <a href="?type=" class="btn btn-sm {% if current_type == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All (9)</a>
-      <a href="?type=router" class="btn btn-sm {% if current_type == 'router' %}btn-primary{% else %}btn-secondary{% endif %}">Routers (5)</a>
-      <a href="?type=switch" class="btn btn-sm {% if current_type == 'switch' %}btn-primary{% else %}btn-secondary{% endif %}">Switches (4)</a>
+      <a href="?type=" class="btn btn-sm {% if current_type == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All ({{ total_devices }})</a>
+      <a href="?type=router" class="btn btn-sm {% if current_type == 'router' %}btn-primary{% else %}btn-secondary{% endif %}">Routers ({{ router_count }})</a>
+      <a href="?type=switch" class="btn btn-sm {% if current_type == 'switch' %}btn-primary{% else %}btn-secondary{% endif %}">Switches ({{ switch_count }})</a>
     </div>
 
     <form method="get" style="display: flex; gap: 8px;">

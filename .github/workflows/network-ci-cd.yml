@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       target_device:
-        description: 'Target Device (Leave blank for ALL devices: R1-R5, S1-S4)'
+        description: 'Target Device (Leave blank for ALL devices: R1-R7, S1-S4)'
         required: false
         default: ''
       deploy_mode:
