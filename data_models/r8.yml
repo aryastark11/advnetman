@@ -1,0 +1,16 @@
+hostname: r8
+vendor: arista
+tier: edge
+device_type: router
+role: ZTP Edge Router (Connected to R2)
+mgmt_ip: 172.20.20.18/24
+mgmt_ipv6: 2001:db8:ffff::18/64
+private_ip: 10.28.28.100
+public_ip: null
+interfaces:
+- name: Ethernet1
+  cisco_name: GigabitEthernet0/0/0/0
+  sonic_name: Ethernet0
+  ip: 10.28.28.100/24
+  description: Uplink to R2 Ethernet3
+subinterfaces: []

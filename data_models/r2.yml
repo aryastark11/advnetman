@@ -18,6 +18,13 @@ dhcp_server:
   range_end: 10.10.20.200
   default_gateway: 10.10.20.1
   dns_server: 198.51.100.10
+- subnet: 10.28.28.0/24
+  range_start: 10.28.28.100
+  range_end: 10.28.28.150
+  default_gateway: 10.28.28.2
+  dns_server: 198.51.100.10
+  tftp_server: 10.28.28.2
+  boot_file: R8.cfg
 - subnet: 10.46.46.0/24
   range_start: 10.46.46.100
   range_end: 10.46.46.150
@@ -67,6 +74,12 @@ interfaces:
   sonic_name: Ethernet4
   routed: true
   description: 802.1Q Trunk Link to S2
+- name: Ethernet3
+  cisco_name: GigabitEthernet0/0/0/2
+  sonic_name: Ethernet8
+  ip: 10.28.28.2/24
+  dhcp_server_ipv4: true
+  description: ZTP Link to R8
 subinterfaces:
 - parent: Ethernet2
   sub_id: 10
