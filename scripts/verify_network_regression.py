@@ -213,6 +213,30 @@ def run_regression_suite(markdown_path=None, json_path=None):
     runner.test("Data Plane Reachability", "End-to-End WAN Reachability (H3 -> 198.51.100.10)", "Positive", check_h3_web_ping,
                 "Asserts complete path from VLAN 10 secondary Host to External Web Server.")
 
+    def check_h6_web_ping():
+        ok, out, err, code = run_cmd("docker exec clab-lab1-h6 ping -c 2 -W 2 198.51.100.10")
+        return ok, "H6 reached WAN Web Server 198.51.100.10 with 0% loss" if ok else f"Ping failed: {err or out}"
+    runner.test("Data Plane Reachability", "End-to-End WAN Reachability (H6 -> 198.51.100.10)", "Positive", check_h6_web_ping,
+                "Asserts complete path from Host H6 via S5, R8 (OSPF Area 30), R2, Core to Web Server.")
+
+    def check_h7_web_ping():
+        ok, out, err, code = run_cmd("docker exec clab-lab1-h7 ping -c 2 -W 2 198.51.100.10")
+        return ok, "H7 reached WAN Web Server 198.51.100.10 with 0% loss" if ok else f"Ping failed: {err or out}"
+    runner.test("Data Plane Reachability", "End-to-End WAN Reachability (H7 -> 198.51.100.10)", "Positive", check_h7_web_ping,
+                "Asserts complete path from Host H7 via S5, R8 (OSPF Area 30), R2, Core to Web Server.")
+
+    def check_h6_h7_ping():
+        ok, out, err, code = run_cmd("docker exec clab-lab1-h6 ping -c 2 -W 2 10.80.10.107")
+        return ok, "H6 reached H7 on VLAN 10 via S5 with 0% loss" if ok else f"Ping failed: {err or out}"
+    runner.test("Data Plane Reachability", "Intra-VLAN Switching (H6 -> H7, 10.80.10.107)", "Positive", check_h6_h7_ping,
+                "Asserts Layer 2 switching between H6 and H7 within VLAN 10 on Switch S5.")
+
+    def check_h6_h5_ping():
+        ok, out, err, code = run_cmd("docker exec clab-lab1-h6 ping -c 2 -W 2 10.70.10.105")
+        return ok, "H6 reached H5 across Area 30 -> Area 0 -> Area 20 with 0% loss" if ok else f"Ping failed: {err or out}"
+    runner.test("Data Plane Reachability", "Inter-Router VLAN 10 Reachability (H6 -> H5, 10.70.10.105)", "Positive", check_h6_h5_ping,
+                "Asserts end-to-end multi-area OSPF routing between R8 subnet (H6) and R7 subnet (H5).")
+
     # Positive: End-to-End HTTP Application Service
     def check_h1_http_get():
         ok, out, err, code = run_cmd("docker exec clab-lab1-h1 curl -s -m 4 http://198.51.100.10")
@@ -293,9 +317,17 @@ def run_regression_suite(markdown_path=None, json_path=None):
     r7_rib, r7_rib_err = get_router_json("clab-lab1-r7", "show ip route")
     r7_routes = r7_rib.get("vrfs", {}).get("default", {}).get("routes", {}) if r7_rib else {}
 
+    # Fetch R8 Route Table
+    r8_rib, r8_rib_err = get_router_json("clab-lab1-r8", "show ip route")
+    r8_routes = r8_rib.get("vrfs", {}).get("default", {}).get("routes", {}) if r8_rib else {}
+
     # Fetch S1 Route Table
     s1_rib, s1_rib_err = get_router_json("clab-lab1-s1", "show ip route")
     s1_vrf = s1_rib.get("vrfs", {}).get("default", {}) if s1_rib else {}
+
+    # Fetch S5 Route Table
+    s5_rib, s5_rib_err = get_router_json("clab-lab1-s5", "show ip route")
+    s5_vrf = s5_rib.get("vrfs", {}).get("default", {}) if s5_rib else {}
 
     # Positive: R1 Default Route via OSPF
     def check_r1_default_route():
@@ -364,6 +396,39 @@ def run_regression_suite(markdown_path=None, json_path=None):
     runner.test("Control Plane RIB", "R7 Core Subnet (10.0.0.0/24 via OSPF Area 20)", "Positive", check_r7_core_route,
                 "Asserts ZTP Router R7 receives Area 0 core routes via OSPF Area 20 from R6.")
 
+    # Positive: R8 Core Subnets via OSPF Area 30
+    def check_r8_core_route():
+        route = r8_routes.get("10.0.0.0/24")
+        passed = bool(route and "ospf" in route.get("routeType", "").lower())
+        return passed, "10.0.0.0/24 learned on R8 via OSPF Area 30 from R2" if passed else f"Core route missing on R8: {route}"
+    runner.test("Control Plane RIB", "R8 Core Subnet (10.0.0.0/24 via OSPF Area 30)", "Positive", check_r8_core_route,
+                "Asserts Router R8 receives Area 0 core routes via OSPF Area 30 from R2.")
+
+    # Positive: R8 Connected VLAN 10 Subnet
+    def check_r8_vlan10_route():
+        route = r8_routes.get("10.80.10.0/24")
+        passed = bool(route and route.get("routeType") == "connected")
+        return passed, "10.80.10.0/24 directly connected on R8 Ethernet2.10" if passed else f"VLAN 10 subnet missing on R8: {route}"
+    runner.test("Control Plane RIB", "R8 Connected Subnet (10.80.10.0/24 via Ethernet2.10)", "Positive", check_r8_vlan10_route,
+                "Asserts VLAN 10 subnet for H6 and H7 is directly connected on R8.")
+
+    # Positive: R2 Learns R8 VLAN 10 Subnet via OSPF Area 30
+    def check_r2_r8_subnet():
+        route = r2_routes.get("10.80.10.0/24")
+        passed = bool(route and "ospf" in route.get("routeType", "").lower())
+        return passed, "10.80.10.0/24 learned on R2 via OSPF Area 30 from R8" if passed else f"R8 subnet missing on R2: {route}"
+    runner.test("Control Plane RIB", "R2 OSPF Area 30 Subnet (10.80.10.0/24 via R8)", "Positive", check_r2_r8_subnet,
+                "Asserts ABR R2 learns R8 VLAN 10 subnet via OSPF Area 30.")
+
+    # Negative: Access Switch S5 Routing Disabled
+    def check_s5_routing_disabled():
+        routing_disabled = s5_vrf.get("routingDisabled", False)
+        data_routes = [r for r in s5_vrf.get("routes", {}).keys() if not r.startswith("172.20.20.")]
+        passed = bool(routing_disabled is True and len(data_routes) == 0)
+        return passed, f"S5 routingDisabled=True and data plane routes count is {len(data_routes)}" if passed else f"Switch routing enabled: disabled={routing_disabled}, count={len(data_routes)}"
+    runner.test("Control Plane RIB", "Negative Switch Routing: S5 Layer 2 Isolation", "Negative", check_s5_routing_disabled,
+                "Negative assertion: Access switch S5 must have IP routing disabled and zero data plane routes.")
+
     # Negative: R1 Bogus Route Absence
     def check_r1_bogus_route_absence():
         bogus_prefix = "10.99.99.0/24"
@@ -410,6 +475,14 @@ def run_regression_suite(markdown_path=None, json_path=None):
     # Fetch R7 OSPF Neighbors
     r7_ospf, r7_ospf_err = get_router_json("clab-lab1-r7", "show ip ospf neighbor")
     r7_ospf_nbrs = r7_ospf.get("vrfs", {}).get("default", {}).get("instList", {}).get("1", {}).get("ospfNeighborEntries", []) if r7_ospf else []
+
+    # Fetch R8 OSPF Neighbors
+    r8_ospf, r8_ospf_err = get_router_json("clab-lab1-r8", "show ip ospf neighbor")
+    r8_ospf_nbrs = r8_ospf.get("vrfs", {}).get("default", {}).get("instList", {}).get("1", {}).get("ospfNeighborEntries", []) if r8_ospf else []
+
+    # Fetch R2 OSPF Neighbors
+    r2_ospf, r2_ospf_err = get_router_json("clab-lab1-r2", "show ip ospf neighbor")
+    r2_ospf_nbrs = r2_ospf.get("vrfs", {}).get("default", {}).get("instList", {}).get("1", {}).get("ospfNeighborEntries", []) if r2_ospf else []
 
     # Fetch R1 VRRP
     r1_vrrp, r1_vrrp_err = get_router_json("clab-lab1-r1", "show vrrp")
@@ -458,6 +531,22 @@ def run_regression_suite(markdown_path=None, json_path=None):
         return passed, "OSPF Area 20 adjacency with R6 (10.46.46.6) is in FULL state on Ethernet1" if passed else f"R7 OSPF state not full: {nbr}"
     runner.test("Protocol Adjacencies & HA", "OSPF Area 20 Neighbor R6 (10.46.46.6 FULL on R7)", "Positive", check_r7_ospf_r6,
                 "Asserts Edge Router R7 maintains Full OSPF Area 20 adjacency with Edge Router R6.")
+
+    # Positive: R8 OSPF Neighbor R2 Full
+    def check_r8_ospf_r2():
+        nbr = next((n for n in r8_ospf_nbrs if n.get("routerId") == "10.0.0.2"), None)
+        passed = bool(nbr and nbr.get("adjacencyState") == "full")
+        return passed, "OSPF Area 30 adjacency with R2 (10.0.0.2) is in FULL state on Ethernet1" if passed else f"R8 OSPF state not full: {nbr}"
+    runner.test("Protocol Adjacencies & HA", "OSPF Area 30 Neighbor R2 (10.0.0.2 FULL on R8)", "Positive", check_r8_ospf_r2,
+                "Asserts Edge Router R8 maintains Full OSPF Area 30 adjacency with ABR Router R2.")
+
+    # Positive: R2 OSPF Neighbor R8 Full
+    def check_r2_ospf_r8():
+        nbr = next((n for n in r2_ospf_nbrs if n.get("routerId") == "10.28.28.8"), None)
+        passed = bool(nbr and nbr.get("adjacencyState") == "full")
+        return passed, "OSPF Area 30 adjacency with R8 (10.28.28.8) is in FULL state on Ethernet3" if passed else f"R2 OSPF Area 30 state not full: {nbr}"
+    runner.test("Protocol Adjacencies & HA", "OSPF Area 30 Neighbor R8 (10.28.28.8 FULL on R2)", "Positive", check_r2_ospf_r8,
+                "Asserts ABR Router R2 maintains Full OSPF Area 30 adjacency with Edge Router R8.")
 
     # Positive: R1 VRRP Groups Master
     def check_r1_vrrp_master():

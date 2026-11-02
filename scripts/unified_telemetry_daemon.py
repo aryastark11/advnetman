@@ -32,6 +32,7 @@ DEVICES = {
     "s2": "172.20.20.22",
     "s3": "172.20.20.23",
     "s4": "172.20.20.24",
+    "s5": "172.20.20.25",
 }
 
 ROUTERS = {"r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"}
@@ -161,6 +162,30 @@ def poll_device(name, ip):
             f"ospf_full_adjacencies={ospf_full_count}i"
         )
         lines.append(r7_line)
+    elif name == "r8":
+        r8_line = (
+            f"r8_telemetry,hostname=r8 "
+            f"cpu_utilization={cpu_util},"
+            f"mem_pct={mem_pct},"
+            f"mem_used_mb={mem_used_mb},"
+            f"mem_total_mb={mem_total_mb},"
+            f"route_entries={route_count}i,"
+            f"ospf_neighbors={ospf_adj_count}i,"
+            f"ospf_full_adjacencies={ospf_full_count}i"
+        )
+        lines.append(r8_line)
+    elif name == "s5":
+        s5_line = (
+            f"s5_telemetry,hostname=s5 "
+            f"cpu_utilization={cpu_util},"
+            f"mem_pct={mem_pct},"
+            f"mem_used_mb={mem_used_mb},"
+            f"mem_total_mb={mem_total_mb},"
+            f"route_entries={route_count}i,"
+            f"ospf_neighbors={ospf_adj_count}i,"
+            f"ospf_full_adjacencies={ospf_full_count}i"
+        )
+        lines.append(s5_line)
 
     # OSPF Neighbors
     for n in ospf_neighbors:

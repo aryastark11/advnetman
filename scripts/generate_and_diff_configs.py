@@ -31,10 +31,12 @@ DEVICE_SPECS = {
     "R5": {"template": "r5.j2",    "data_model": "r5.yml", "mgmt_ip": "172.20.20.15", "tier": "pe_wan"},
     "R6": {"template": "r1_r2.j2", "data_model": "r6.yml", "mgmt_ip": "172.20.20.16", "tier": "distribution"},
     "R7": {"template": "r1_r2.j2", "data_model": "r7.yml", "mgmt_ip": "172.20.20.17", "tier": "distribution"},
+    "R8": {"template": "r1_r2.j2", "data_model": "r8.yml", "mgmt_ip": "172.20.20.18", "tier": "distribution"},
     "S1": {"template": "s1_s2.j2", "data_model": "s1.yml", "mgmt_ip": "172.20.20.21", "tier": "access_switch"},
     "S2": {"template": "s1_s2.j2", "data_model": "s2.yml", "mgmt_ip": "172.20.20.22", "tier": "access_switch"},
     "S3": {"template": "s3_s4.j2", "data_model": "s3.yml", "mgmt_ip": "172.20.20.23", "tier": "core_switch"},
     "S4": {"template": "s3_s4.j2", "data_model": "s4.yml", "mgmt_ip": "172.20.20.24", "tier": "core_switch"},
+    "S5": {"template": "s1_s2.j2", "data_model": "s5.yml", "mgmt_ip": "172.20.20.25", "tier": "access_switch"},
 }
 
 def get_vault_device_password(device_name):

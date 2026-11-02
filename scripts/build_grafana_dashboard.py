@@ -102,12 +102,14 @@ dashboard = {
           {"selected": False, "text": "r5", "value": "r5"},
           {"selected": False, "text": "r6", "value": "r6"},
           {"selected": False, "text": "r7", "value": "r7"},
+          {"selected": False, "text": "r8", "value": "r8"},
           {"selected": False, "text": "s1", "value": "s1"},
           {"selected": False, "text": "s2", "value": "s2"},
           {"selected": False, "text": "s3", "value": "s3"},
-          {"selected": False, "text": "s4", "value": "s4"}
+          {"selected": False, "text": "s4", "value": "s4"},
+          {"selected": False, "text": "s5", "value": "s5"}
         ],
-        "query": "r1,r2,r3,r4,r5,r6,r7,s1,s2,s3,s4",
+        "query": "r1,r2,r3,r4,r5,r6,r7,r8,s1,s2,s3,s4,s5",
         "queryValue": "",
         "skipUrlSync": False,
         "type": "custom"

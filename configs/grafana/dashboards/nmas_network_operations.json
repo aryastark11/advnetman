@@ -121,6 +121,11 @@
           },
           {
             "selected": false,
+            "text": "r8",
+            "value": "r8"
+          },
+          {
+            "selected": false,
             "text": "s1",
             "value": "s1"
           },
@@ -138,9 +143,14 @@
             "selected": false,
             "text": "s4",
             "value": "s4"
+          },
+          {
+            "selected": false,
+            "text": "s5",
+            "value": "s5"
           }
         ],
-        "query": "r1,r2,r3,r4,r5,r6,r7,s1,s2,s3,s4",
+        "query": "r1,r2,r3,r4,r5,r6,r7,r8,s1,s2,s3,s4,s5",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"

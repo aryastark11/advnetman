@@ -1,0 +1,12 @@
+hostname: h6
+vendor: linux
+tier: host
+device_type: host
+role: VLAN 10 Test Host (R8 Subnet)
+mgmt_ip: 172.20.20.36/24
+mgmt_ipv6: 2001:db8:ffff::36/64
+private_ip: 10.80.10.106/24
+public_ip: null
+vlans: '10'
+gateway: 10.80.10.1
+gateway_v6: 2001:db8:80:10::1

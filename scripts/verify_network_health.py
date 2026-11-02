@@ -150,6 +150,14 @@ def main():
                 "docker exec clab-lab1-h5 ping -c 2 -W 2 198.51.100.10")
     runner.test("Data Plane - Internet Access", "H5 (VLAN 10) -> Web Server HTTP 200 GET",
                 "docker exec clab-lab1-h5 curl -s -m 5 http://198.51.100.10 | grep -q 'Hello World'")
+    runner.test("Data Plane - Internet Access", "H6 (VLAN 10) -> Web Server IPv4 Ping",
+                "docker exec clab-lab1-h6 ping -c 2 -W 2 198.51.100.10")
+    runner.test("Data Plane - Internet Access", "H6 (VLAN 10) -> Web Server HTTP 200 GET",
+                "docker exec clab-lab1-h6 curl -s -m 5 http://198.51.100.10 | grep -q 'Hello World'")
+    runner.test("Data Plane - Internet Access", "H7 (VLAN 10) -> Web Server IPv4 Ping",
+                "docker exec clab-lab1-h7 ping -c 2 -W 2 198.51.100.10")
+    runner.test("Data Plane - Internet Access", "H7 (VLAN 10) -> Web Server HTTP 200 GET",
+                "docker exec clab-lab1-h7 curl -s -m 5 http://198.51.100.10 | grep -q 'Hello World'")
 
     # 2. DATA PLANE: Inter-VLAN & Intra-VLAN Connectivity
     print("\n--- 4.2 Data Plane: Inter-VLAN & Intra-VLAN Switching & Routing ---")
@@ -159,6 +167,10 @@ def main():
                 f"docker exec clab-lab1-h1 ping -c 2 -W 2 {h2_ip}")
     runner.test("Data Plane - Inter/Intra VLAN", f"H2 (VLAN 20) <-> H3 (VLAN 10) Inter-VLAN ({h3_ip})",
                 f"docker exec clab-lab1-h2 ping -c 2 -W 2 {h3_ip}")
+    runner.test("Data Plane - Inter/Intra VLAN", "H6 (VLAN 10) <-> H7 (VLAN 10) Intra-VLAN (10.80.10.107)",
+                "docker exec clab-lab1-h6 ping -c 2 -W 2 10.80.10.107")
+    runner.test("Data Plane - Inter/Intra VLAN", "H6 (VLAN 10) <-> H1 (VLAN 10) Inter-Subnet (10.10.10.101)",
+                "docker exec clab-lab1-h6 ping -c 2 -W 2 10.10.10.101")
     runner.test("Data Plane - Inter/Intra VLAN", f"H1 (VLAN 10) <-> H4 (VLAN 30) IPv6 ({h4_ip6})",
                 f"docker exec clab-lab1-h1 ping6 -c 2 -W 2 {h4_ip6}")
     runner.test("Data Plane - Inter/Intra VLAN", f"H2 (VLAN 20) <-> H4 (VLAN 30) IPv6 ({h4_ip6})",
@@ -178,6 +190,10 @@ def main():
                 "docker exec clab-lab1-r6 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q 'FULL'")
     runner.test("Control Plane - OSPF", "OSPF Area 20 Neighbor Adjacency on R7 (FULL to R6)",
                 "docker exec clab-lab1-r7 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q 'FULL'")
+    runner.test("Control Plane - OSPF", "OSPF Area 30 Neighbor Adjacency on R8 (FULL to R2)",
+                "docker exec clab-lab1-r8 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q 'FULL'")
+    runner.test("Control Plane - OSPF", "OSPF Area 30 Neighbor Adjacency on R2 (FULL to R8)",
+                "docker exec clab-lab1-r2 FastCli -p 15 -c 'show ip ospf neighbor' | grep -q '10.28.28.8.*FULL'")
     runner.test("Control Plane - RIP", "RIPv2 Route Database on R1 Contains Subnets",
                 "docker exec clab-lab1-r1 FastCli -p 15 -c 'show ip rip database' | grep -q '10.10.'")
 
@@ -196,6 +212,10 @@ def main():
                 "docker exec clab-lab1-r6 FastCli -p 15 -c 'show management api http-commands' | grep -i -E 'Enabled:\\s+Yes'")
     runner.test("Security & Management", "eAPI HTTP Command-API Active on R7",
                 "docker exec clab-lab1-r7 FastCli -p 15 -c 'show management api http-commands' | grep -i -E 'Enabled:\\s+Yes'")
+    runner.test("Security & Management", "eAPI HTTP Command-API Active on R8",
+                "docker exec clab-lab1-r8 FastCli -p 15 -c 'show management api http-commands' | grep -i -E 'Enabled:\\s+Yes'")
+    runner.test("Security & Management", "eAPI HTTP Command-API Active on S5",
+                "docker exec clab-lab1-s5 FastCli -p 15 -c 'show management api http-commands' | grep -i -E 'Enabled:\\s+Yes'")
     runner.test("Security & Management", "FreeRADIUS 2FA Daemon Running",
                 "systemctl is-active freeradius || true")
     runner.test("Security & Management", "PrivacyIDEA REST Service Running on Port 5000",
@@ -211,6 +231,10 @@ def main():
                 "curl -s 'http://localhost:8086/query?db=nmas_datalake' --data-urlencode \"q=SELECT count(cpu_utilization) FROM r6_telemetry WHERE time > now() - 1m\" | grep -q '\"values\":'")
     runner.test("Observability", "R7 Telemetry Ingestion Active in InfluxDB Data Lake",
                 "curl -s 'http://localhost:8086/query?db=nmas_datalake' --data-urlencode \"q=SELECT count(cpu_utilization) FROM r7_telemetry WHERE time > now() - 1m\" | grep -q '\"values\":'")
+    runner.test("Observability", "R8 Telemetry Ingestion Active in InfluxDB Data Lake",
+                "curl -s 'http://localhost:8086/query?db=nmas_datalake' --data-urlencode \"q=SELECT count(cpu_utilization) FROM device_telemetry WHERE hostname='r8' AND time > now() - 1m\" | grep -q '\"values\":'")
+    runner.test("Observability", "S5 Telemetry Ingestion Active in InfluxDB Data Lake",
+                "curl -s 'http://localhost:8086/query?db=nmas_datalake' --data-urlencode \"q=SELECT count(cpu_utilization) FROM device_telemetry WHERE hostname='s5' AND time > now() - 1m\" | grep -q '\"values\":'")
 
     all_passed = runner.print_summary(markdown_path=args.markdown)
 

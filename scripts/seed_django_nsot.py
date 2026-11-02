@@ -81,13 +81,14 @@ raw_devices = [
     {"name": "r5", "type": "router", "vendor": "arista", "tier": "pe_router", "role": "Provider Edge Router (AS 65005, Public DMZ Web Server Transit)", "mgmt_ip": "172.20.20.15/24", "private_ip": "172.16.35.2", "public_ip": "198.51.100.1", "routing_protocols": "BGP", "bgp_asn": 65005, "router_id": "198.51.100.1", "template_name": "r5.j2"},
     {"name": "r6", "type": "router", "vendor": "arista", "tier": "distribution", "role": "ZTP Edge Router (OSPF Area 10 to R4 & Area 20 to R7)", "mgmt_ip": "172.20.20.16/24", "private_ip": "10.46.46.100", "public_ip": None, "routing_protocols": "OSPF", "bgp_asn": None, "router_id": "10.46.46.6", "template_name": "r1_r2.j2"},
     {"name": "r7", "type": "router", "vendor": "arista", "tier": "distribution", "role": "ZTP Edge Router (OSPF Area 20 to R6 & VLAN 10 Gateway to H5)", "mgmt_ip": "172.20.20.17/24", "private_ip": "10.67.67.113", "public_ip": None, "routing_protocols": "OSPF", "bgp_asn": None, "router_id": "10.67.67.7", "vlans": "10", "template_name": "r1_r2.j2"},
-    {"name": "r8", "type": "router", "vendor": "arista", "tier": "edge", "role": "ZTP Edge Router (Connected to R2 via 10.28.28.0/24)", "mgmt_ip": "172.20.20.18/24", "private_ip": "10.28.28.100", "public_ip": None, "routing_protocols": "DHCP Client", "bgp_asn": None, "router_id": "10.28.28.100", "template_name": "r1_r2.j2"},
+    {"name": "r8", "type": "router", "vendor": "arista", "tier": "distribution", "role": "Distribution Router (OSPF Area 30 to R2 & VLAN 10 Gateway to S5)", "mgmt_ip": "172.20.20.18/24", "private_ip": "10.28.28.100", "public_ip": None, "routing_protocols": "OSPF", "bgp_asn": None, "router_id": "10.28.28.8", "vlans": "10", "template_name": "r1_r2.j2"},
     
     # Switches
     {"name": "s1", "type": "switch", "vendor": "arista", "tier": "access_switch", "role": "Access Switch (VLANs 10, 20, 30, Trunk to R1 & S2)", "mgmt_ip": "172.20.20.21/24", "private_ip": "172.20.20.21", "public_ip": None, "vlans": "10,20,30", "template_name": "s1_s2.j2"},
     {"name": "s2", "type": "switch", "vendor": "arista", "tier": "access_switch", "role": "Access Switch (VLANs 10, 20, 30, Trunk to R2 & S1)", "mgmt_ip": "172.20.20.22/24", "private_ip": "172.20.20.22", "public_ip": None, "vlans": "10,20,30", "template_name": "s1_s2.j2"},
     {"name": "s3", "type": "switch", "vendor": "arista", "tier": "core_switch", "role": "Core Switch (OSPF Area 0 Backbone Bridge: R3, R1, S4, NMAS)", "mgmt_ip": "172.20.20.23/24", "private_ip": "172.20.20.23", "public_ip": None, "template_name": "s3_s4.j2"},
     {"name": "s4", "type": "switch", "vendor": "arista", "tier": "core_switch", "role": "Core Switch (OSPF Area 0 Backbone Bridge: R4, R2, S3)", "mgmt_ip": "172.20.20.24/24", "private_ip": "172.20.20.24", "public_ip": None, "template_name": "s3_s4.j2"},
+    {"name": "s5", "type": "switch", "vendor": "arista", "tier": "access_switch", "role": "Access Switch for R8 (VLAN 10, Trunk to R8, Access to H6 & H7)", "mgmt_ip": "172.20.20.25/24", "private_ip": "172.20.20.25", "public_ip": None, "vlans": "10", "template_name": "s1_s2.j2"},
     
     # End Hosts
     {"name": "h1", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host", "mgmt_ip": "172.20.20.101/24", "private_ip": "10.10.10.101/24", "vlans": "10"},
@@ -95,6 +96,8 @@ raw_devices = [
     {"name": "h3", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host", "mgmt_ip": "172.20.20.103/24", "private_ip": "10.10.10.103/24", "vlans": "10"},
     {"name": "h4", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 30 IPv6-Only Test Host", "mgmt_ip": "172.20.20.104/24", "private_ip": "IPv6-Only (2001:db8:30::104/64)", "vlans": "30"},
     {"name": "h5", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host (R7 Subnet)", "mgmt_ip": "172.20.20.35/24", "private_ip": "10.70.10.105/24", "vlans": "10"},
+    {"name": "h6", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host (R8 Subnet)", "mgmt_ip": "172.20.20.36/24", "private_ip": "10.80.10.106/24", "vlans": "10"},
+    {"name": "h7", "type": "host", "vendor": "linux", "tier": "host", "role": "VLAN 10 Test Host (R8 Subnet)", "mgmt_ip": "172.20.20.37/24", "private_ip": "10.80.10.107/24", "vlans": "10"},
     
     # Management & Dedicated Servers
     {"name": "nmas", "type": "nmas", "vendor": "linux", "tier": "management", "role": "Network Management & Automation Station", "mgmt_ip": "172.20.20.100/24", "private_ip": "10.0.0.100/24"},

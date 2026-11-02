@@ -78,6 +78,12 @@ topology:
       mgmt-ipv4: 172.20.20.24
       startup-config: configs/ceos/s4.cfg
 
+    s5:
+      kind: arista_ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.25
+      startup-config: configs/ceos/s5.cfg
+
     # End Hosts & Servers
     h1:
       kind: linux
@@ -117,6 +123,22 @@ topology:
       mgmt-ipv4: 172.20.20.35
       binds:
         - configs/h5/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    h6:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.36
+      binds:
+        - configs/h6/start.sh:/start.sh
+      cmd: /bin/bash /start.sh
+
+    h7:
+      kind: linux
+      image: lab-host:latest
+      mgmt-ipv4: 172.20.20.37
+      binds:
+        - configs/h7/start.sh:/start.sh
       cmd: /bin/bash /start.sh
 
     web-server:
@@ -182,3 +204,8 @@ topology:
 
     # Expansion (R2 to R8 ZTP Link)
     - endpoints: ["r2:eth3", "r8:eth1"]
+
+    # Expansion (R8 to S5 Switch & VLAN 10 Hosts)
+    - endpoints: ["r8:eth2", "s5:eth1"]
+    - endpoints: ["s5:eth2", "h6:eth1"]
+    - endpoints: ["s5:eth3", "h7:eth1"]

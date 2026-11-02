@@ -29,10 +29,12 @@ DEVICE_MAP = {
     "R5": {"mgmt_ip": "172.20.20.15", "tier": "pe_wan"},
     "R6": {"mgmt_ip": "172.20.20.16", "tier": "distribution"},
     "R7": {"mgmt_ip": "172.20.20.17", "tier": "distribution"},
+    "R8": {"mgmt_ip": "172.20.20.18", "tier": "distribution"},
     "S1": {"mgmt_ip": "172.20.20.21", "tier": "access_switch"},
     "S2": {"mgmt_ip": "172.20.20.22", "tier": "access_switch"},
     "S3": {"mgmt_ip": "172.20.20.23", "tier": "core_switch"},
     "S4": {"mgmt_ip": "172.20.20.24", "tier": "core_switch"},
+    "S5": {"mgmt_ip": "172.20.20.25", "tier": "access_switch"},
 }
 
 def log_info(msg):

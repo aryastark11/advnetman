@@ -79,7 +79,8 @@ interfaces:
   sonic_name: Ethernet8
   ip: 10.28.28.2/24
   dhcp_server_ipv4: true
-  description: ZTP Link to R8
+  ospf_area: 0.0.0.30
+  description: ZTP Link to R8 (OSPF Area 30)
 subinterfaces:
 - parent: Ethernet2
   sub_id: 10
