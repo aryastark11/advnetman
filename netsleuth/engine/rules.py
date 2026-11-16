@@ -22,9 +22,33 @@ EXPECTED_OSPF_INTERFACES = {
     "R8": [("Ethernet1", "0.0.0.30")],
 }
 
+EXPECTED_SWITCH_TRUNKS = {
+    "S1": {
+        "Ethernet1": ["10", "20"],
+        "Ethernet2": ["10", "20", "30"]
+    },
+    "S2": {
+        "Ethernet1": ["10", "20", "30"],
+        "Ethernet2": ["10", "20", "30"]
+    },
+    "S5": {
+        "Ethernet1": ["10"]
+    }
+}
+
 def check_ospf_rules() -> List[Dict[str, Any]]:
     violations = []
     
+    def norm_area(a):
+        if not a: return ""
+        s = str(a).strip()
+        if "." in s:
+            parts = s.split(".")
+            if len(parts) == 4 and parts[:3] == ["0", "0", "0"]:
+                return str(int(parts[-1]))
+            return s
+        return s
+
     for dev, exp_intfs in EXPECTED_OSPF_INTERFACES.items():
         neighbors = get_ospf_neighbors(dev)
         active_intf_areas = {}
@@ -33,8 +57,39 @@ def check_ospf_rules() -> List[Dict[str, Any]]:
             area_val = n.get("area", "")
             active_intf_areas[intf_name] = (n.get("state", "").lower(), area_val, n)
 
+        # Get configured interface areas on dev
+        ospf_intf_map = {}
+        ospf_intfs_res = run_commands(dev, ["show ip ospf interface"])
+        if ospf_intfs_res and isinstance(ospf_intfs_res, list):
+            try:
+                ospf_intf_map = ospf_intfs_res[0].get("vrfs", {}).get("default", {}).get("instList", {}).get("1", {}).get("interfaces", {})
+            except Exception:
+                pass
+
         for exp_intf, exp_area in exp_intfs:
-            if exp_intf not in active_intf_areas:
+            intf_cfg = ospf_intf_map.get(exp_intf, {})
+            cfg_area = intf_cfg.get("area", "")
+
+            # 1. Explicit Area ID mismatch check on this device
+            if cfg_area and norm_area(cfg_area) != norm_area(exp_area):
+                violations.append({
+                    "rule": "ospf_area_mismatch",
+                    "device": dev,
+                    "severity": "critical" if dev in ["R4", "R6"] else "high",
+                    "category": "Control Plane - OSPF",
+                    "title": f"OSPF Area Mismatch on {dev} ({exp_intf} Area {cfg_area})",
+                    "detail": f"Interface {exp_intf} on {dev} is configured with OSPF Area {cfg_area}, but expected Area {exp_area}.",
+                    "evidence_type": "ospf_interface",
+                    "raw_data": {
+                        "device": dev,
+                        "interface": exp_intf,
+                        "configured_area": cfg_area,
+                        "expected_area": exp_area,
+                        "area_id": norm_area(exp_area),
+                        "neighbors": neighbors
+                    }
+                })
+            elif exp_intf not in active_intf_areas:
                 violations.append({
                     "rule": "ospf_neighbor_missing",
                     "device": dev,
@@ -43,7 +98,13 @@ def check_ospf_rules() -> List[Dict[str, Any]]:
                     "title": f"OSPF Adjacency Missing on {dev} ({exp_intf})",
                     "detail": f"Router {dev} has no active OSPF neighbor on {exp_intf} (expected Area {exp_area}). Possible area ID mismatch or interface shutdown.",
                     "evidence_type": "ospf_neighbor",
-                    "raw_data": {"device": dev, "interface": exp_intf, "expected_area": exp_area, "neighbors": neighbors}
+                    "raw_data": {
+                        "device": dev,
+                        "interface": exp_intf,
+                        "expected_area": exp_area,
+                        "area_id": norm_area(exp_area),
+                        "neighbors": neighbors
+                    }
                 })
             else:
                 state, area_val, n_data = active_intf_areas[exp_intf]
@@ -58,6 +119,43 @@ def check_ospf_rules() -> List[Dict[str, Any]]:
                         "evidence_type": "ospf_neighbor",
                         "raw_data": n_data
                     })
+    return violations
+
+def check_vlan_trunk_rules() -> List[Dict[str, Any]]:
+    violations = []
+    for sw, trunks in EXPECTED_SWITCH_TRUNKS.items():
+        res = run_commands(sw, ["show interfaces switchport"])
+        if not res or not isinstance(res, list):
+            continue
+        sw_ports = res[0].get("switchports", {})
+        for intf_name, exp_vlans in trunks.items():
+            port_info = sw_ports.get(intf_name, {})
+            mode = port_info.get("switchportInfo", {}).get("mode", "")
+            if mode != "trunk":
+                continue
+            allowed_str = port_info.get("switchportInfo", {}).get("trunkAllowedVlans", "")
+            if not allowed_str or allowed_str == "ALL":
+                continue
+            allowed_set = set(v.strip() for v in allowed_str.split(",") if v.strip())
+            missing = [v for v in exp_vlans if v not in allowed_set]
+            if missing:
+                full_allowed = ",".join(exp_vlans)
+                violations.append({
+                    "rule": "vlan_trunk_missing",
+                    "device": sw,
+                    "severity": "critical",
+                    "category": "Data Plane - Interface",
+                    "title": f"Layer 2 VLAN Trunk Missing VLAN {','.join(missing)} on {sw} ({intf_name})",
+                    "detail": f"Switch {sw} trunk {intf_name} allowed VLANs ('{allowed_str}') is missing required VLAN(s): {', '.join(missing)}.",
+                    "evidence_type": "switchport_state",
+                    "raw_data": {
+                        "device": sw,
+                        "interface": intf_name,
+                        "missing_vlans": missing,
+                        "allowed_vlans": allowed_str,
+                        "expected_vlans": full_allowed
+                    }
+                })
     return violations
 
 def check_bgp_rules() -> List[Dict[str, Any]]:
@@ -281,6 +379,7 @@ def evaluate_all_rules() -> List[Dict[str, Any]]:
     """Runs all deterministic health rules and returns list of rule violations."""
     all_violations = []
     all_violations.extend(check_interface_rules())
+    all_violations.extend(check_vlan_trunk_rules())
     all_violations.extend(check_bgp_rules())
     all_violations.extend(check_ospf_rules())
     all_violations.extend(check_rip_rules())

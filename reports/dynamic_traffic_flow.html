@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Network Traffic Flow Visualizer (NetworkX)</title>
+  <title>Multi-Area Dynamic Network Traffic Flow Visualizer (NetworkX)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -17,14 +17,14 @@
     }
     header {
       background: #1c2541;
-      padding: 14px 24px;
+      padding: 12px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #3a506b;
     }
     header h1 {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 700;
       color: #ffffff;
       display: flex;
@@ -34,7 +34,15 @@
     .badge {
       background: #00b4d8;
       color: #0b132b;
-      padding: 4px 8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .badge-ospf {
+      background: #e879f9;
+      color: #1e1b4b;
+      padding: 3px 8px;
       border-radius: 4px;
       font-size: 0.75rem;
       font-weight: bold;
@@ -42,7 +50,7 @@
     .main-container {
       display: flex;
       flex: 1;
-      height: calc(100vh - 65px);
+      height: calc(100vh - 60px);
     }
     .canvas-panel {
       flex: 1;
@@ -55,14 +63,14 @@
       display: block;
     }
     .side-panel {
-      width: 380px;
+      width: 420px;
       background: #1c2541;
       border-left: 2px solid #3a506b;
-      padding: 20px;
+      padding: 18px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 14px;
     }
     .card {
       background: #0b132b;
@@ -71,9 +79,9 @@
       border: 1px solid #3a506b;
     }
     .card h3 {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: #48cae4;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -82,14 +90,14 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      padding: 10px 12px;
-      margin-bottom: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
       background: #1c2541;
       border: 1px solid #3a506b;
       border-radius: 6px;
       color: #ffffff;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       transition: all 0.2s ease;
       text-align: left;
     }
@@ -99,8 +107,8 @@
       transform: translateX(4px);
     }
     .flow-indicator {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       display: inline-block;
       margin-right: 8px;
@@ -108,49 +116,57 @@
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 8px;
+      gap: 8px;
+      margin-top: 6px;
     }
     .stat-box {
       background: #1c2541;
-      padding: 10px;
+      padding: 8px;
       border-radius: 6px;
       border: 1px solid #3a506b;
       text-align: center;
     }
     .stat-val {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: bold;
       color: #00b4d8;
     }
     .stat-label {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: #90e0ef;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .btn-group {
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
     .btn {
       flex: 1;
-      padding: 8px;
+      padding: 7px;
       background: #0077b6;
       color: #ffffff;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
     }
     .btn:hover { background: #0096c7; }
+    .proto-tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.68rem;
+      font-weight: bold;
+      margin-right: 4px;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>🌐 Dynamic Network Traffic Flow Visualizer <span class="badge">NetworkX Model</span></h1>
+    <h1>🌐 Multi-Area Traffic Flow Visualizer <span class="badge">NetworkX Model</span> <span class="badge-ospf">OSPF Areas 0/10/20/30</span></h1>
     <div>
-      <a href="http://localhost:3000" target="_blank" style="color: #00b4d8; text-decoration: none; font-size: 0.85rem; font-weight: bold; padding: 6px 12px; border: 1px solid #00b4d8; border-radius: 4px;">📊 Open Grafana NOC Dashboard</a>
+      <a href="http://localhost:3000/d/nmas-noc-master" target="_blank" style="color: #00b4d8; text-decoration: none; font-size: 0.85rem; font-weight: bold; padding: 6px 12px; border: 1px solid #00b4d8; border-radius: 4px;">📊 Open Grafana NOC</a>
     </div>
   </header>
 
@@ -161,9 +177,21 @@
 
     <div class="side-panel">
       <div class="card">
-        <h3>Traffic Flows</h3>
+        <h3>Routing Domains & Protocols</h3>
+        <div style="font-size: 0.78rem; line-height: 1.6;">
+          <p><span class="proto-tag" style="background:#1e3a8a; color:#93c5fd;">OSPF Area 0</span> Core Backbone (R1-R4, S3-S4)</p>
+          <p><span class="proto-tag" style="background:#083344; color:#67e8f9;">OSPF Area 10</span> R4 ↔ R6 (10.46.46.0/24)</p>
+          <p><span class="proto-tag" style="background:#451a03; color:#fdba74;">OSPF Area 20</span> R6 ↔ R7 ↔ H5 (10.67.67.0/24, 10.70.10.0/24)</p>
+          <p><span class="proto-tag" style="background:#3b0764; color:#f0abfc;">OSPF Area 30</span> R2 ↔ R8 ↔ S5 ↔ H6/H7 (10.28.28.0/24, 10.80.10.0/24)</p>
+          <p><span class="proto-tag" style="background:#064e3b; color:#6ee7b7;">eBGP AS 65005/65001</span> R5 ↔ R3, R4</p>
+          <p><span class="proto-tag" style="background:#581c87; color:#d8b4fe;">RIPv2 / VRRP</span> Legacy Access VLANs 10, 20, 30</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Active Traffic Flows</h3>
         <div id="flowButtons"></div>
-        <div class="btn-group" style="margin-top: 10px;">
+        <div class="btn-group" style="margin-top: 8px;">
           <button class="btn" id="toggleAllBtn">Show All Flows</button>
           <button class="btn" id="pauseBtn" style="background: #e63946;">Pause / Play</button>
         </div>
@@ -171,24 +199,24 @@
 
       <div class="card">
         <h3>Active Flow Details</h3>
-        <div id="flowDetails" style="font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
-          Select a flow to inspect routing path, protocol, and throughput.
+        <div id="flowDetails" style="font-size: 0.8rem; line-height: 1.45; color: #cbd5e1;">
+          Select a traffic flow to inspect its multi-area routing path and protocol hop breakdown.
         </div>
       </div>
 
       <div class="card">
-        <h3>Network Topology Metrics</h3>
+        <h3>Topology Metrics</h3>
         <div class="stats-grid">
           <div class="stat-box">
-            <div class="stat-val">16</div>
+            <div class="stat-val">23</div>
             <div class="stat-label">Total Nodes</div>
           </div>
           <div class="stat-box">
-            <div class="stat-val">17</div>
+            <div class="stat-val">25</div>
             <div class="stat-label">Active Links</div>
           </div>
           <div class="stat-box">
-            <div class="stat-val">665 Mbps</div>
+            <div class="stat-val">1,010 Mbps</div>
             <div class="stat-label">Aggregate Load</div>
           </div>
           <div class="stat-box">
@@ -204,11 +232,11 @@
     const canvas = document.getElementById('flowCanvas');
     const ctx = canvas.getContext('2d');
 
-    const nodes = {"H1": [2.0, 1.5, "H1 (Host)", "host", "10.10.10.101", "VLAN 10"], "H2": [5.0, 1.5, "H2 (Host)", "host", "10.10.20.102", "VLAN 20"], "H3": [9.0, 1.5, "H3 (Host)", "host", "10.10.10.103", "VLAN 10"], "H4": [12.0, 1.5, "H4 (Host)", "host", "2001:db8:30::104", "VLAN 30 (IPv6)"], "S1": [3.5, 3.5, "S1 (Access)", "switch", "172.20.20.21", "VLAN 10,20,30"], "S2": [10.5, 3.5, "S2 (Access)", "switch", "172.20.20.22", "VLAN 10,20,30"], "R1": [3.5, 6.0, "R1 (Dist)", "router", "10.0.0.1", "OSPF A0 / RIP"], "R2": [10.5, 6.0, "R2 (Dist/DHCP)", "router", "10.0.0.2", "OSPF A0 / RIP / DHCP"], "NMAS": [0.8, 8.5, "NMAS Station", "server", "10.0.0.100", "Data Lake / Mgmt"], "Backup Server": [0.8, 11.0, "Backup Node", "backup", "10.99.99.2", "Dedicated Backup"], "S3": [4.5, 8.5, "S3 (Core)", "switch", "172.20.20.23", "OSPF Area 0 Bridge"], "S4": [9.5, 8.5, "S4 (Core)", "switch", "172.20.20.24", "OSPF Area 0 Bridge"], "R3": [4.0, 11.0, "R3 (ASBR)", "router", "10.0.0.3", "AS 65001 | OSPF A0"], "R4": [10.0, 11.0, "R4 (ASBR)", "router", "10.0.0.4", "AS 65001 | OSPF A0"], "R5": [7.0, 13.5, "R5 (PE Router)", "pe_router", "172.16.35.2", "BGP AS 65005"], "Web Server": [11.5, 13.5, "Web Server", "server", "198.51.100.10", "HTTP / 2001:db8:100::10"]};
-    const links = [["H1", "S1", "Access VLAN 10", 1000, 0.5], ["H2", "S1", "Access VLAN 20", 1000, 0.5], ["H3", "S2", "Access VLAN 10", 1000, 0.5], ["H4", "S2", "Access VLAN 30 (IPv6)", 1000, 0.5], ["S1", "S2", "802.1Q Inter-Switch Trunk", 1000, 1.0], ["S1", "R1", "802.1Q Router-on-a-Stick", 1000, 0.8], ["S2", "R2", "802.1Q Router-on-a-Stick", 1000, 0.8], ["R1", "S3", "OSPF Area 0 Transit", 1000, 1.2], ["R2", "S4", "OSPF Area 0 Transit", 1000, 1.2], ["S3", "S4", "Core Inter-Switch Link", 10000, 0.3], ["S3", "NMAS", "Management / Data Lake Tap", 1000, 0.5], ["NMAS", "Backup Server", "Isolated Replication Link (10.99.99.0/30)", 1000, 0.2], ["S3", "R3", "OSPF Area 0 Transit", 1000, 1.0], ["S4", "R4", "OSPF Area 0 Transit", 1000, 1.0], ["R3", "R5", "eBGP Peering (AS 65001 - AS 65005)", 10000, 2.5], ["R4", "R5", "eBGP Peering (AS 65001 - AS 65005)", 10000, 2.5], ["R5", "Web Server", "Public DMZ Transit (198.51.100.0/24)", 10000, 0.4]];
-    const flows = [{"id": "flow_h1_web", "name": "Flow 1: Host H1 to Web Server (HTTP IPv4)", "protocol": "HTTP / TCP 80", "source": "H1", "destination": "Web Server", "path": ["H1", "S1", "R1", "S3", "R3", "R5", "Web Server"], "color": "#00e676", "rate_mbps": 125, "description": "User browsing production web application over RIPv2 -> OSPF -> BGP path."}, {"id": "flow_h2_web", "name": "Flow 2: Host H2 to Web Server (Inter-VLAN / DHCP)", "protocol": "HTTPS / TCP 443", "source": "H2", "destination": "Web Server", "path": ["H2", "S1", "S2", "R2", "S4", "R4", "R5", "Web Server"], "color": "#00b0ff", "rate_mbps": 85, "description": "VLAN 20 client routed via Distribution R2 across ASBR R4 to public Web Server."}, {"id": "flow_h4_ipv6", "name": "Flow 3: Host H4 IPv6 Traffic to Web Server", "protocol": "IPv6 HTTP / TCP 80", "source": "H4", "destination": "Web Server", "path": ["H4", "S2", "R2", "S4", "S3", "R3", "R5", "Web Server"], "color": "#d500f9", "rate_mbps": 60, "description": "Native dual-stack IPv6 flow from Host 4 (2001:db8:30::104) to Web Server (2001:db8:100::10)."}, {"id": "flow_nmas_telemetry", "name": "Flow 4: NMAS Ingestion (SNMP, Syslog, gRPC Streaming)", "protocol": "gRPC / gNMI + SNMP + Syslog", "source": "R5", "destination": "NMAS", "path": ["R5", "R3", "S3", "NMAS"], "color": "#ffab00", "rate_mbps": 45, "description": "Continuous telemetry streaming and syslog event ingestion to NMAS Data Lake."}, {"id": "flow_nmas_backup", "name": "Flow 5: Data Lake Isolated Replication to Backup Server", "protocol": "TCP 9999 (Encrypted Datalake Sync)", "source": "NMAS", "destination": "Backup Server", "path": ["NMAS", "Backup Server"], "color": "#ff1744", "rate_mbps": 350, "description": "Out-of-band P2P backup replication across private 10.99.99.0/30 interface."}];
+    const nodes = {"H1": [1.8, 1.8, "H1 (Campus Host)", "host", "10.10.10.101", "VLAN 10", "Static GW (10.10.10.254)"], "H2": [4.2, 1.8, "H2 (Campus Host)", "host", "10.10.20.102", "VLAN 20", "Static GW (10.10.20.254)"], "H3": [6.6, 1.8, "H3 (Campus Host)", "host", "10.10.10.103", "VLAN 10", "Static GW (10.10.10.254)"], "H4": [9.0, 1.8, "H4 (Campus Host)", "host", "2001:db8:30::104", "VLAN 30 (IPv6)", "Static GW (IPv6)"], "S1": [3.0, 4.2, "S1 (Access Switch)", "switch", "172.20.20.21", "VLAN 10,20,30", "Layer 2 802.1Q Trunk"], "S2": [7.8, 4.2, "S2 (Access Switch)", "switch", "172.20.20.22", "VLAN 10,20,30", "Layer 2 802.1Q Trunk"], "R1": [3.0, 7.0, "R1 (Dist / Master)", "router", "10.0.0.1", "VRRP Master", "OSPF Area 0 / RIPv2"], "R2": [7.8, 7.0, "R2 (Dist / ABR)", "router", "10.0.0.2", "VRRP Backup / DHCP", "OSPF Area 0 & Area 30 ABR / RIPv2"], "NMAS": [1.0, 9.4, "NMAS Station", "server", "10.0.0.100", "Data Lake / NOC", "Host / Telemetry Collector"], "Backup Server": [1.0, 12.0, "Backup Node", "backup", "10.99.99.2", "Isolated Backup", "Direct Route (10.99.99.0/30)"], "S3": [3.8, 9.4, "S3 (Core Switch)", "switch", "172.20.20.23", "Area 0 Bridge", "OSPF Area 0 Backbone"], "S4": [7.0, 9.4, "S4 (Core Switch)", "switch", "172.20.20.24", "Area 0 Bridge", "OSPF Area 0 Backbone"], "R3": [3.5, 12.0, "R3 (ASBR)", "router", "10.0.0.3", "AS 65001 ASBR", "eBGP AS 65005 & OSPF Area 0"], "R4": [7.2, 12.0, "R4 (ASBR / ABR)", "router", "10.0.0.4", "AS 65001 ASBR", "eBGP AS 65005, OSPF Area 0 & Area 10"], "R5": [5.4, 14.4, "R5 (PE Router)", "pe_router", "172.16.35.2", "BGP AS 65005", "eBGP AS 65001 / Connected DMZ"], "Web Server": [9.0, 14.4, "Web Server", "server", "198.51.100.10", "HTTP DMZ", "Connected WAN (198.51.100.0/24)"], "R6": [11.5, 12.0, "R6 (Edge / ABR)", "new_router", "10.46.46.6", "Area Border Router", "OSPF Area 10 & Area 20"], "R7": [15.2, 12.0, "R7 (Edge Router)", "new_router", "10.67.67.7", "Branch Distribution", "OSPF Area 20 (10.70.10.0/24)"], "H5": [15.2, 9.4, "H5 (Branch Host)", "new_host", "10.70.10.105", "VLAN 10 Subnet", "Default GW via R7 (OSPF Area 20)"], "R8": [11.5, 7.0, "R8 (Distribution)", "new_router", "10.28.28.100", "Branch Distribution", "OSPF Area 30 (10.80.10.0/24)"], "S5": [11.5, 4.2, "S5 (Access Switch)", "new_switch", "172.20.20.25", "VLAN 10 Access Switch", "Layer 2 802.1Q Trunk to R8"], "H6": [11.5, 1.8, "H6 (Campus Host)", "new_host", "10.80.10.106", "VLAN 10 Subnet", "Default GW via R8 (OSPF Area 30)"], "H7": [14.0, 1.8, "H7 (Campus Host)", "new_host", "10.80.10.107", "VLAN 10 Subnet", "Default GW via R8 (OSPF Area 30)"]};
+    const links = [["H1", "S1", "Access VLAN 10", "L2 Access", "#94a3b8"], ["H2", "S1", "Access VLAN 20", "L2 Access", "#94a3b8"], ["H3", "S2", "Access VLAN 10", "L2 Access", "#94a3b8"], ["H4", "S2", "Access VLAN 30 (IPv6)", "L2 Access", "#94a3b8"], ["S1", "S2", "802.1Q Inter-Switch Trunk", "802.1Q Trunk", "#94a3b8"], ["S1", "R1", "802.1Q Router-on-a-Stick", "RIPv2 / VRRP", "#c084fc"], ["S2", "R2", "802.1Q Router-on-a-Stick", "RIPv2 / VRRP", "#c084fc"], ["R1", "R2", "Distribution VRRP Cross-Link", "VRRP / RIPv2", "#c084fc"], ["R1", "S3", "OSPF Area 0 Transit", "OSPF Area 0", "#38bdf8"], ["R2", "S4", "OSPF Area 0 Transit", "OSPF Area 0", "#38bdf8"], ["S3", "S4", "Core Inter-Switch Link", "OSPF Area 0 Bridge", "#38bdf8"], ["S3", "NMAS", "Management / Data Lake Tap", "OSPF Area 0 Tap", "#64748b"], ["NMAS", "Backup Server", "Isolated Replication Link (10.99.99.0/30)", "P2P Backup", "#ef4444"], ["S3", "R3", "OSPF Area 0 Transit", "OSPF Area 0", "#38bdf8"], ["S4", "R4", "OSPF Area 0 Transit", "OSPF Area 0", "#38bdf8"], ["R3", "R5", "eBGP Peering (AS 65001 - AS 65005)", "eBGP AS 65001/65005", "#34d399"], ["R4", "R5", "eBGP Peering (AS 65001 - AS 65005)", "eBGP AS 65001/65005", "#34d399"], ["R5", "Web Server", "Public DMZ Transit (198.51.100.0/24)", "Connected WAN", "#64748b"], ["R4", "R6", "OSPF Area 10 Transit (10.46.46.0/24)", "OSPF Area 10", "#00e5ff"], ["R6", "R7", "OSPF Area 20 Transit (10.67.67.0/24)", "OSPF Area 20", "#fb923c"], ["R7", "H5", "VLAN 10 Sub-Interface (10.70.10.1/24)", "OSPF Area 20 Access", "#fdba74"], ["R2", "R8", "OSPF Area 30 Transit (10.28.28.0/24)", "OSPF Area 30", "#e879f9"], ["R8", "S5", "802.1Q Trunk / VLAN 10 GW (10.80.10.1/24)", "OSPF Area 30 Subnet", "#f0abfc"], ["S5", "H6", "Access VLAN 10 (10.80.10.106/24)", "L2 Access VLAN 10", "#d8b4fe"], ["S5", "H7", "Access VLAN 10 (10.80.10.107/24)", "L2 Access VLAN 10", "#d8b4fe"]];
+    const flows = [{"id": "flow_h1_web", "name": "Flow 1: H1 to Web Server (RIPv2 -> OSPF A0 -> BGP)", "protocol": "HTTP / TCP 80", "source": "H1", "destination": "Web Server", "path": ["H1", "S1", "R1", "S3", "R3", "R5", "Web Server"], "color": "#00e676", "rate_mbps": 125, "description": "Legacy VLAN 10 client traversing RIPv2 -> OSPF Area 0 -> eBGP to Web Server."}, {"id": "flow_h2_web", "name": "Flow 2: H2 to Web Server (Inter-VLAN / DHCP)", "protocol": "HTTPS / TCP 443", "source": "H2", "destination": "Web Server", "path": ["H2", "S1", "S2", "R2", "S4", "R4", "R5", "Web Server"], "color": "#00b0ff", "rate_mbps": 85, "description": "VLAN 20 client routed via Distribution R2 across ASBR R4 to public Web Server."}, {"id": "flow_h4_ipv6", "name": "Flow 3: H4 IPv6 Traffic to Web Server", "protocol": "IPv6 HTTP / TCP 80", "source": "H4", "destination": "Web Server", "path": ["H4", "S2", "R2", "S4", "S3", "R3", "R5", "Web Server"], "color": "#d500f9", "rate_mbps": 60, "description": "Native dual-stack IPv6 flow from Host 4 (2001:db8:30::104) to Web Server (2001:db8:100::10)."}, {"id": "flow_h5_r7_web", "name": "Flow 4: NEW Host H5 to Web Server (OSPF Area 20 -> 10 -> BGP)", "protocol": "HTTP / TCP 80 (OSPF Multi-Area)", "source": "H5", "destination": "Web Server", "path": ["H5", "R7", "R6", "R4", "R5", "Web Server"], "color": "#ff6d00", "rate_mbps": 110, "description": "Host H5 in VLAN 10 (10.70.10.105) traversing OSPF Area 20 -> Area 10 -> eBGP to Internet."}, {"id": "flow_h6_r8_web", "name": "Flow 5: NEW Host H6 to Web Server (OSPF Area 30 -> 0 -> BGP)", "protocol": "HTTP / TCP 80 (OSPF Area 30)", "source": "H6", "destination": "Web Server", "path": ["H6", "S5", "R8", "R2", "S4", "R4", "R5", "Web Server"], "color": "#e040fb", "rate_mbps": 115, "description": "Host H6 in VLAN 10 (10.80.10.106) routed via Switch S5 -> R8 in OSPF Area 30 -> R2 ABR -> Internet."}, {"id": "flow_inter_area_h6_h5", "name": "Flow 6: NEW Inter-Area Mesh H6 (Area 30) <-> H5 (Area 20)", "protocol": "ICMP / Multi-Area Mesh", "source": "H6", "destination": "H5", "path": ["H6", "S5", "R8", "R2", "S4", "R4", "R6", "R7", "H5"], "color": "#76ff03", "rate_mbps": 95, "description": "Direct Inter-Area routing across OSPF Area 30 -> Area 0 -> Area 10 -> Area 20."}, {"id": "flow_nmas_telemetry", "name": "Flow 7: NMAS Telemetry Ingestion (R6, R7, R8, S5 Streaming)", "protocol": "gRPC / gNMI + SNMP", "source": "R8", "destination": "NMAS", "path": ["R8", "R2", "S4", "S3", "NMAS"], "color": "#ffab00", "rate_mbps": 50, "description": "Unified telemetry streaming from all new devices (R6, R7, R8, S5) into InfluxDB data lake."}, {"id": "flow_nmas_backup", "name": "Flow 8: NMAS Data Lake Isolated Backup Replication", "protocol": "TCP 9999 (Encrypted Replication)", "source": "NMAS", "destination": "Backup Server", "path": ["NMAS", "Backup Server"], "color": "#ff1744", "rate_mbps": 350, "description": "Out-of-band P2P backup replication across private 10.99.99.0/30 interface."}];
 
-    let activeFlowIndex = -1; // -1 means all
+    let activeFlowIndex = -1;
     let isPaused = false;
     let animationOffset = 0;
 
@@ -219,12 +247,11 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Map graph coordinates to canvas
     function getCanvasCoords(gx, gy) {
-      const padX = 60;
-      const padY = 60;
-      const scaleX = (canvas.width - padX * 2) / 14.0;
-      const scaleY = (canvas.height - padY * 2) / 15.0;
+      const padX = 50;
+      const padY = 50;
+      const scaleX = (canvas.width - padX * 2) / 17.5;
+      const scaleY = (canvas.height - padY * 2) / 16.5;
       return {
         x: padX + gx * scaleX,
         y: canvas.height - (padY + gy * scaleY)
@@ -233,8 +260,6 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw Grid / Stars Background
       ctx.fillStyle = "#0b132b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -243,22 +268,22 @@
         const p1 = getCanvasCoords(nodes[l[0]][0], nodes[l[0]][1]);
         const p2 = getCanvasCoords(nodes[l[1]][0], nodes[l[1]][1]);
 
-        ctx.strokeStyle = "#1c2541";
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = l[4] || "#1c2541";
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
       });
 
-      // Draw Flows and Animated Particles
+      // Draw Flows and Animated Packets
       flows.forEach((flow, fIdx) => {
         if (activeFlowIndex !== -1 && activeFlowIndex !== fIdx) return;
 
         const path = flow.path;
         ctx.strokeStyle = flow.color;
         ctx.lineWidth = activeFlowIndex === fIdx ? 4.5 : 2.5;
-        ctx.globalAlpha = activeFlowIndex === fIdx ? 0.9 : 0.6;
+        ctx.globalAlpha = activeFlowIndex === fIdx ? 0.95 : 0.6;
 
         ctx.beginPath();
         for (let i = 0; i < path.length; i++) {
@@ -271,7 +296,7 @@
 
         // Animate Packets
         const nSegs = path.length - 1;
-        const totalProgress = ((animationOffset + fIdx * 0.2) % 1.0);
+        const totalProgress = ((animationOffset + fIdx * 0.15) % 1.0);
         const curSeg = Math.min(Math.floor(totalProgress * nSegs), nSegs - 1);
         const segProg = (totalProgress * nSegs) - curSeg;
 
@@ -281,21 +306,19 @@
         const pktX = pA.x + (pB.x - pA.x) * segProg;
         const pktY = pA.y + (pB.y - pA.y) * segProg;
 
-        // Glow
-        const grad = ctx.createRadialGradient(pktX, pktY, 2, pktX, pktY, 12);
+        const grad = ctx.createRadialGradient(pktX, pktY, 2, pktX, pktY, 10);
         grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.4, flow.color);
+        grad.addColorStop(0.5, flow.color);
         grad.addColorStop(1, 'transparent');
 
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(pktX, pktY, 12, 0, Math.PI * 2);
+        ctx.arc(pktX, pktY, 10, 0, Math.PI * 2);
         ctx.fill();
 
-        // Core
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(pktX, pktY, 3, 0, Math.PI * 2);
+        ctx.arc(pktX, pktY, 2.5, 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -311,36 +334,40 @@
         else if (ntype === "pe_router") col = "#1565c0";
         else if (ntype === "server") col = "#2e7d32";
         else if (ntype === "backup") col = "#c62828";
+        else if (ntype === "new_router") col = "#0097a7";
+        else if (ntype === "new_switch") col = "#00796b";
+        else if (ntype === "new_host") col = "#455a64";
 
-        // Outer circle
         ctx.fillStyle = col;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = ntype.includes("new") ? "#00e5ff" : "#ffffff";
+        ctx.lineWidth = ntype.includes("new") ? 2.5 : 1.5;
         ctx.stroke();
 
-        // Label
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 11px sans-serif";
+        ctx.font = "bold 10px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(key, p.x, p.y);
 
-        // Subtext
-        ctx.font = "10px sans-serif";
+        ctx.font = "9px sans-serif";
         ctx.fillStyle = "#90e0ef";
-        ctx.fillText(n[4], p.x, p.y + 24);
+        ctx.fillText(n[4], p.x, p.y + 20);
+
+        ctx.font = "italic 8px sans-serif";
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillText(n[6] ? n[6].split('/')[0] : "", p.x, p.y + 30);
       });
 
       if (!isPaused) {
-        animationOffset += 0.006;
+        animationOffset += 0.005;
       }
       requestAnimationFrame(draw);
     }
 
-    // UI Buttons
+    // Setup Flow Buttons
     const btnContainer = document.getElementById('flowButtons');
     flows.forEach((flow, idx) => {
       const btn = document.createElement('button');
@@ -358,7 +385,7 @@
     document.getElementById('toggleAllBtn').onclick = () => {
       activeFlowIndex = -1;
       document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('flowDetails').innerHTML = "Displaying all multi-protocol dynamic traffic flows simultaneously.";
+      document.getElementById('flowDetails').innerHTML = "Displaying all multi-area dynamic traffic flows simultaneously.";
     };
 
     document.getElementById('pauseBtn').onclick = () => {
@@ -367,12 +394,12 @@
 
     function updateDetails(f) {
       document.getElementById('flowDetails').innerHTML = `
-        <div style="font-weight:bold; color:#00b4d8; font-size:1rem; margin-bottom:6px;">${f.name}</div>
+        <div style="font-weight:bold; color:#00b4d8; font-size:0.95rem; margin-bottom:6px;">${f.name}</div>
         <p><strong>Protocol:</strong> ${f.protocol}</p>
         <p><strong>Throughput:</strong> ${f.rate_mbps} Mbps</p>
         <p><strong>Source:</strong> ${f.source} &rarr; <strong>Destination:</strong> ${f.destination}</p>
-        <p style="margin-top:6px;"><strong>Network Path:</strong><br><code style="color:#a7f3d0;">${f.path.join(' &rarr; ')}</code></p>
-        <p style="margin-top:6px; color:#94a3b8;">${f.description}</p>
+        <p style="margin-top:6px;"><strong>Network Path:</strong><br><code style="color:#a7f3d0; font-size:0.75rem;">${f.path.join(' &rarr; ')}</code></p>
+        <p style="margin-top:6px; color:#94a3b8; font-size:0.75rem;">${f.description}</p>
       `;
     }
 

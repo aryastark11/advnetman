@@ -546,7 +546,8 @@ async function approveRemediation(incId) {
         await selectIncident(incId);
         loadIncidents();
         loadTopology();
-        alert(result.message);
+        const msg = result.message || result.error || (result.success ? "Remediation applied successfully." : "Remediation failed.");
+        alert(msg);
     } catch (e) {
         alert("Remediation execution error: " + e);
     }

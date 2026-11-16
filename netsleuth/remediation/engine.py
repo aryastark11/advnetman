@@ -37,7 +37,7 @@ def execute_remediation(incident_id: str, commands: Optional[List[str]] = None,
                         rollback: Optional[List[str]] = None) -> Dict[str, Any]:
     incident = get_incident_by_id(incident_id)
     if not incident:
-        return {"success": False, "error": f"Incident {incident_id} not found"}
+        return {"success": False, "error": f"Incident {incident_id} not found", "message": f"Incident {incident_id} not found"}
 
     target_dev = device or incident.get("root_cause_device")
     proposed_fix = incident.get("proposed_fix", {})
@@ -45,7 +45,7 @@ def execute_remediation(incident_id: str, commands: Optional[List[str]] = None,
     rollback_cmds = rollback or proposed_fix.get("rollback", [])
 
     if not fix_cmds:
-        return {"success": False, "error": f"No remediation commands specified for {incident_id}"}
+        return {"success": False, "error": f"No remediation commands specified for {incident_id}", "message": f"No remediation commands specified for {incident_id}"}
 
     # Step 1: Human Approval Audit & Pre-Snapshot
     add_timeline_event(
@@ -74,7 +74,7 @@ def execute_remediation(incident_id: str, commands: Optional[List[str]] = None,
             details={"error": apply_output}
         )
         record_audit_action(incident_id, target_dev, "apply_fix", fix_cmds, operator, "failed", pre_snapshot)
-        return {"success": False, "error": f"eAPI apply failed: {apply_output}"}
+        return {"success": False, "error": f"eAPI apply failed: {apply_output}", "message": f"eAPI apply failed on {target_dev}: {apply_output}"}
 
     # Step 3: Allow network convergence & re-verify
     post_snapshot = get_running_config(target_dev)

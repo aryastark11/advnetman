@@ -190,9 +190,19 @@ Respond ONLY with a valid JSON object matching this schema:
             commands = ["router bgp 65005" if dev == "R5" else "router bgp 65001", "no neighbor 172.16.35.1 shutdown", "no neighbor 172.16.45.1 shutdown"]
             rollback_cmds = ["router bgp 65005" if dev == "R5" else "router bgp 65001", "neighbor 172.16.35.1 shutdown"]
         elif "OSPF" in cat or "ospf" in title.lower():
-            cause = f"OSPF neighbor adjacency degraded on {dev} {extracted_intf} due to interface state or area configuration."
-            commands = [f"interface {extracted_intf}", "ip ospf hello-interval 1", "ip ospf dead-interval 3", "no shutdown"]
-            rollback_cmds = [f"interface {extracted_intf}", "shutdown"]
+            target_area = "10" if dev in ["R4", "R6"] else ("20" if dev == "R7" else ("30" if dev == "R8" else "0"))
+            if "area" in title.lower() or "mismatch" in title.lower():
+                cause = f"OSPF area configuration mismatch on {dev} {extracted_intf}. Link configured with invalid area."
+                commands = [f"interface {extracted_intf}", f"ip ospf area {target_area}"]
+                rollback_cmds = [f"interface {extracted_intf}", "ip ospf area 99"]
+            else:
+                cause = f"OSPF neighbor adjacency degraded on {dev} {extracted_intf} due to interface state or area configuration."
+                commands = [f"interface {extracted_intf}", f"ip ospf area {target_area}", "no shutdown"]
+                rollback_cmds = [f"interface {extracted_intf}", "shutdown"]
+        elif "trunk" in cat.lower() or "vlan" in title.lower() or "trunk" in title.lower():
+            cause = f"Layer 2 802.1Q VLAN trunk misconfiguration on switch {dev} {extracted_intf} pruning required access VLANs."
+            commands = [f"interface {extracted_intf}", "switchport trunk allowed vlan 10,20"]
+            rollback_cmds = [f"interface {extracted_intf}", "switchport trunk allowed vlan 20"]
         elif "Interface" in cat or "interface" in title.lower():
             cause = f"Physical / administrative interface state down on {dev} interface {extracted_intf} interrupting layer 2/3 transport."
             commands = [f"interface {extracted_intf}", "no shutdown"]
