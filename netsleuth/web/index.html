@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RCN NetSleuth AI - Autonomous Troubleshooting Copilot</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-title">RCN NetSleuth AI</div>
+        <div class="brand-subtitle">Autonomous Closed-Loop Copilot &bull; CSCI 5840</div>
+      </div>
+    </div>
+
+    <div class="header-stats">
+      <div class="stat-item">
+        <span>Devices:</span>
+        <span class="stat-value">13 Arista cEOS &bull; 7 Hosts</span>
+      </div>
+      <div class="stat-item">
+        <span>Probes:</span>
+        <span class="stat-value">35 Continuous (10s)</span>
+      </div>
+      <div class="stat-item">
+        <span>Status:</span>
+        <span id="header-incident-badge" class="stat-badge badge-green">NETWORK HEALTHY</span>
+      </div>
+      <div class="stat-item">
+        <span>Engine:</span>
+        <span class="stat-badge badge-cyan">Deterministic Core + Gemini LLM</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="btn-scan-health" class="btn-secondary">Scan Health</button>
+      <button id="btn-clear-demo" class="btn-primary">🔄 Reset Network</button>
+    </div>
+  </header>
+
+  <!-- Demo Fault Injection Bar -->
+  <div class="demo-bar">
+    <div class="demo-title">
+      <span>Demo Mode Scenarios:</span>
+    </div>
+    <button class="demo-btn" data-scenario="interface-down">⚡ Interface Down (R1 Et2)</button>
+    <button class="demo-btn" data-scenario="ospf-area-mismatch">⚡ OSPF Area Mismatch (R4 Et3)</button>
+    <button class="demo-btn" data-scenario="rip-missing-network">⚡ RIP Missing Net (R1)</button>
+    <button class="demo-btn" data-scenario="bgp-peer-down">⚡ BGP Peer Down (R5)</button>
+    <button class="demo-btn" data-scenario="vlan-trunk-missing">⚡ VLAN Trunk Missing (S1 Et1)</button>
+    <button class="demo-btn" data-scenario="varp-gateway-down">⚡ VARP Gateway Down (R1 Et2.10)</button>
+    <button class="demo-btn" data-scenario="webserver-down">⚡ Web Server Down</button>
+  </div>
+
+  <!-- Main Three-Column Layout -->
+  <div class="main-container">
+    
+    <!-- Left Sidebar: Incidents & Path Tracer -->
+    <div class="sidebar-left">
+      <div class="panel-header">
+        <span>Active Incidents</span>
+        <span id="incident-counter" class="stat-badge badge-cyan">Live Sync</span>
+      </div>
+      <div id="incident-list" class="incident-list">
+        <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:20px;">Scanning network state...</div>
+      </div>
+
+      <!-- Path Tracer Deck -->
+      <div class="path-tracer-box">
+        <div class="panel-header" style="padding:0 0 10px 0; background:none;">
+          <span>Host &rarr; Web Path Tracer</span>
+        </div>
+        <div class="tracer-controls">
+          <select id="tracer-host-select" class="tracer-select">
+            <option value="H1">H1 (VLAN 10 Campus)</option>
+            <option value="H2">H2 (VLAN 20 Voice/IoT)</option>
+            <option value="H3">H3 (VLAN 10 Campus)</option>
+            <option value="H4">H4 (VLAN 30 IPv6)</option>
+            <option value="H5">H5 (VLAN 10 Area 10/20)</option>
+            <option value="H6">H6 (VLAN 10 Area 30 ZTP)</option>
+            <option value="H7">H7 (VLAN 10 Area 30 ZTP)</option>
+          </select>
+          <button id="btn-trace-path" class="btn-primary">Trace Path</button>
+        </div>
+        <div id="hops-container" class="hops-list">
+          <div style="font-size:11px; color:var(--text-muted); text-align:center;">Select host & click Trace Path to verify end-to-end hops.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Canvas: Network Topology Map -->
+    <div class="topology-center">
+      <div class="topo-controls">
+        <button id="btn-zoom-in" class="topo-control-btn" title="Zoom In">+</button>
+        <button id="btn-zoom-out" class="topo-control-btn" title="Zoom Out">&minus;</button>
+        <button id="btn-zoom-reset" class="topo-control-btn" title="Reset View">&#x21bb;</button>
+      </div>
+      <svg id="topology-svg">
+        <g id="topo-viewport"></g>
+      </svg>
+    </div>
+
+    <!-- Right Sidebar: Evidence, Incident Deep Dive & Chat Dock -->
+    <div class="sidebar-right">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-target="tab-evidence">Node Evidence</button>
+        <button class="tab-btn" data-target="tab-incident">Incident Analysis</button>
+        <button class="tab-btn" data-target="tab-copilot">AI Copilot</button>
+      </div>
+
+      <!-- Tab 1: Node Evidence Panel -->
+      <div id="tab-evidence" class="tab-content active">
+        <div id="evidence-node-name" style="font-size:14px; font-weight:700; color:white;">Node Evidence</div>
+        <div id="evidence-content" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:30px;">
+            Click on any node in the topology map to inspect live interfaces, BGP peers, OSPF neighbors, RIP routes, VARP state, and syslog.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Incident Deep-Dive & Remediation -->
+      <div id="tab-incident" class="tab-content">
+        <div id="incident-deep-dive" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:30px;">
+            Select an incident from the left sidebar to view root-cause hypotheses, cited evidence, and proposed eAPI remediation.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Evidence-Linked AI Copilot Chat Dock -->
+      <div id="tab-copilot" class="tab-content">
+        <div class="chat-container">
+          <div id="chat-messages" class="chat-messages">
+            <div class="chat-bubble bot">
+              👋 <b>Welcome to NetSleuth AI Copilot.</b><br>
+              I am an evidence-first troubleshooting assistant. Every answer I provide cites concrete evidence IDs (<code>EVID-...</code>) and live telemetry.
+              <br><br>
+              I have access to read-only diagnostic tools:
+              <code>get_path</code>, <code>get_ospf_neighbors</code>, <code>get_bgp_peers</code>, <code>get_rip_routes</code>, <code>get_interface_stats</code>, <code>get_logs</code>, <code>get_config_diff</code>, <code>run_ping</code>.
+            </div>
+          </div>
+
+          <div class="chat-quick-actions">
+            <button class="quick-prompt-btn" data-prompt="Trace path from H1 to Web Server">Trace H1 Path</button>
+            <button class="quick-prompt-btn" data-prompt="Check BGP peer state on R5">Check R5 BGP</button>
+            <button class="quick-prompt-btn" data-prompt="Inspect OSPF neighbors on R1">Inspect R1 OSPF</button>
+            <button class="quick-prompt-btn" data-prompt="Show recent error logs on R1">R1 Syslog</button>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Ask NetSleuth Copilot (e.g. 'Why is H5 failing?')">
+            <button id="chat-send-btn" class="btn-primary">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

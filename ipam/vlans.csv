@@ -1,0 +1,4 @@
+vlan_id,name,ipv4_subnet,ipv6_subnet,gateway_v4,gateway_v6,description
+10,Corporate_Data,10.10.10.0/24,2001:db8:10::/64,10.10.10.254,2001:db8:10::254,VLAN 10 Corporate Data (H1, H3, H5, H6)
+20,Voice_IoT,10.10.20.0/24,2001:db8:20::/64,10.10.20.254,2001:db8:20::254,VLAN 20 Voice & IoT (H2)
+30,IPv6_Only,None,2001:db8:30::/64,None,2001:db8:30::254,VLAN 30 IPv6 Only Services (H4)
