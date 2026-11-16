@@ -13,7 +13,7 @@ from netsleuth.remediation.engine import execute_remediation
 from netsleuth.collectors.synthetic_probes import run_all_probes
 from netsleuth.storage.db import get_incident_by_id, get_audit_logs
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = os.environ.get("NETSLEUTH_URL", "http://127.0.0.1:8000")
 
 class TestFaultInjectionSuites(unittest.TestCase):
 
@@ -28,7 +28,7 @@ class TestFaultInjectionSuites(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         clear_all()
-        time.sleep(1.0)
+        time.sleep(3.5)
 
     def test_01_bgp_peer_down(self):
         print("\n--- Testing Scenario: bgp-peer-down ---")

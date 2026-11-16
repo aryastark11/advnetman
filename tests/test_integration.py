@@ -18,7 +18,7 @@ from netsleuth.collectors.eapi_poller import (
 from netsleuth.collectors.synthetic_probes import run_all_probes
 from netsleuth.graph.path_tracer import trace_path
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = os.environ.get("NETSLEUTH_URL", "http://127.0.0.1:8000")
 
 class TestIntegrationLive(unittest.TestCase):
 

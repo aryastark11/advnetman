@@ -1,0 +1,60 @@
+{% extends 'automation/base.html' %}
+
+{% block title %}NetSleuth AI &mdash; Autonomous Troubleshooting Copilot - RoboControl NSoT{% endblock %}
+
+{% block content %}
+<!-- NetSleuth Integration Header Bar -->
+<div style="background: linear-gradient(135deg, rgba(19, 29, 49, 0.95), rgba(8, 20, 39, 0.95)); border: 1px solid rgba(6, 182, 212, 0.4); border-radius: 10px; padding: 18px 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(6, 182, 212, 0.15);">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #0284c7, #06b6d4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 1.3rem; box-shadow: 0 0 16px rgba(6, 182, 212, 0.5);">
+        <i class="fa-solid fa-brain"></i>
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h1 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">RCN NetSleuth AI &mdash; Troubleshooting Copilot</h1>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+            <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> {{ engine_status }}
+          </span>
+          <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.4);">
+            Gemini LLM (Read-Only Safety Shell)
+          </span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 3px;">
+          Deterministic Core &bull; 23 Nodes &bull; 35 Synthetic Probes / 10s &bull; Closed-Loop Remediation with Auto-Rollback
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 10px; align-items: center;">
+      {% if incident_count > 0 %}
+        <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 6px 12px; font-size: 0.8rem;">
+          <i class="fa-solid fa-triangle-exclamation"></i> {{ incident_count }} Open Incident{{ incident_count|pluralize }}
+        </span>
+      {% else %}
+        <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 6px 12px; font-size: 0.8rem;">
+          <i class="fa-solid fa-circle-check"></i> Network Baseline Normal
+        </span>
+      {% endif %}
+
+      <a href="http://localhost:8001" target="_blank" class="btn btn-secondary" style="font-size: 0.82rem;" title="Open standalone interface in dedicated window">
+        <i class="fa-solid fa-up-right-from-square"></i> Open Fullscreen
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Embedded NetSleuth Live Studio -->
+<div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);">
+  <iframe 
+    src="http://localhost:8001" 
+    id="netsleuth-frame"
+    style="width: 100%; height: calc(100vh - 220px); min-height: 850px; border: none; background: #0b1120; display: block;"
+    title="NetSleuth AI Interactive Dashboard">
+  </iframe>
+</div>
+
+{% endblock %}

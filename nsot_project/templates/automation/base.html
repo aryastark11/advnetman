@@ -315,6 +315,7 @@
     <nav>
       <ul class="nav-links">
         <li><a href="{% url 'dashboard' %}" class="nav-link"><i class="fa-solid fa-server"></i> Inventory</a></li>
+        <li><a href="{% url 'netsleuth' %}" class="nav-link" style="color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-brain" style="color: #06b6d4;"></i> NetSleuth AI</a></li>
         <li><a href="{% url 'device_console' %}" class="nav-link" style="color: #60a5fa;"><i class="fa-solid fa-terminal"></i> Web Console</a></li>
         <li><a href="{% url 'config_change' %}" class="nav-link" style="color: #34d399;"><i class="fa-solid fa-pen-to-square"></i> Config Studio</a></li>
         <li><a href="{% url 'templates_list' %}" class="nav-link"><i class="fa-solid fa-layer-group"></i> Templates</a></li>
@@ -324,7 +325,12 @@
       </ul>
     </nav>
 
-    <div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <!-- Button to navigate to NetSleuth AI Copilot -->
+      <a href="{% url 'netsleuth' %}" class="btn" style="display: flex; align-items: center; gap: 7px; padding: 8px 14px; background: linear-gradient(135deg, #0284c7, #06b6d4); color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35); transition: all 0.2s ease;" title="Open NetSleuth AI Troubleshooting Copilot">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>NetSleuth AI</span>
+      </a>
+
       <!-- Button to navigate to Grafana NOC Dashboard -->
       <a href="http://localhost:3000/d/nmas-noc-master" target="_blank" class="btn-grafana" title="Open Grafana Network Operations Center">
         <i class="fa-solid fa-chart-line"></i> <span>Open Grafana NOC</span> <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.75rem;"></i>

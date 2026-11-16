@@ -1791,4 +1791,64 @@ def api_commit_and_pipeline(request):
     })
 
 
+# -------------------------------------------------------------
+# NetSleuth AI Autonomous Troubleshooting Copilot Integration
+# -------------------------------------------------------------
+import requests
+
+NETSLEUTH_BACKEND_URL = os.environ.get("NETSLEUTH_BACKEND_URL", "http://127.0.0.1:8001")
+
+def netsleuth_view(request):
+    """
+    Renders the NetSleuth AI troubleshooting copilot dashboard embedded into the NSOT GUI.
+    """
+    incident_count = 0
+    active_incidents = []
+    engine_status = "Online"
+    try:
+        r = requests.get(f"{NETSLEUTH_BACKEND_URL}/api/incidents", timeout=2.0)
+        if r.status_code == 200:
+            active_incidents = r.json()
+            incident_count = len([i for i in active_incidents if i.get("status") == "open"])
+    except Exception:
+        engine_status = "Connecting"
+
+    context = {
+        'netsleuth_url': NETSLEUTH_BACKEND_URL,
+        'incident_count': incident_count,
+        'engine_status': engine_status,
+        'total_nodes': Device.objects.count(),
+    }
+    return render(request, 'automation/netsleuth.html', context)
+
+@csrf_exempt
+def netsleuth_proxy_api(request, path=""):
+    """
+    Transparent reverse proxy for NetSleuth REST endpoints from port 8000 -> 8001.
+    Allows API callers and frontend widgets to access NetSleuth directly through NSOT.
+    """
+    clean_path = path.lstrip('/')
+    target_url = f"{NETSLEUTH_BACKEND_URL}/api/{clean_path}"
+    if request.META.get('QUERY_STRING'):
+        target_url += f"?{request.META['QUERY_STRING']}"
+
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            data=request.body,
+            timeout=25
+        )
+        return HttpResponse(
+            content=resp.content,
+            status=resp.status_code,
+            content_type=resp.headers.get('content-type', 'application/json')
+        )
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to forward request to NetSleuth backend: {str(e)}"}, status=502)
+
+
+
 

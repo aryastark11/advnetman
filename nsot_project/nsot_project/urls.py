@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from automation import views
@@ -31,6 +31,10 @@ urlpatterns = [
     path('config/change/', views.config_change_view, name='config_change'),
     path('api/device/exec/', views.api_device_exec_cmd, name='api_device_exec_cmd'),
     path('api/cicd/commit-change/', views.api_commit_and_pipeline, name='api_commit_and_pipeline'),
+
+    # NetSleuth AI Copilot Integration Routes
+    path('netsleuth/', views.netsleuth_view, name='netsleuth'),
+    re_path(r'^api/(?P<path>(topology|incidents|nodes|path|remediate|copilot|chat|fault|probes|audit-logs).*)$', views.netsleuth_proxy_api, name='netsleuth_proxy_api'),
 ]
 
 if settings.DEBUG:
