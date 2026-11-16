@@ -72,6 +72,29 @@ class TestFaultInjectionSuites(unittest.TestCase):
             self.assertGreaterEqual(len(intf_incs), 1)
             r1_inc = [i for i in intf_incs if i["root_cause_device"] == "R1"][0]
             self.assertIn("R1", r1_inc["root_cause_device"])
+
+            # Verify remediation targets Ethernet2 (NOT Ethernet1)
+            proposed_cmds = r1_inc.get("proposed_fix", {}).get("commands", [])
+            self.assertIn("interface Ethernet2", proposed_cmds)
+            self.assertIn("no shutdown", proposed_cmds)
+            self.assertNotIn("interface Ethernet1", proposed_cmds)
+
+            # Test AI Diagnose API endpoint
+            diag_res = requests.post(f"{API_URL}/api/incidents/{r1_inc['id']}/diagnose").json()
+            diag_cmds = diag_res.get("proposed_fix", {}).get("commands", [])
+            self.assertIn("interface Ethernet2", diag_cmds)
+            self.assertIn("no shutdown", diag_cmds)
+            self.assertNotIn("interface Ethernet1", diag_cmds)
+
+            # Test Closed-loop remediation
+            fix_res = execute_remediation(
+                incident_id=r1_inc["id"],
+                commands=diag_cmds,
+                device="R1",
+                operator="test_runner"
+            )
+            self.assertTrue(fix_res["success"])
+            self.assertEqual(fix_res["status"], "resolved")
         finally:
             clear_scenario("interface-down")
             time.sleep(1.0)
@@ -102,7 +125,9 @@ class TestFaultInjectionSuites(unittest.TestCase):
             res = requests.get(f"{API_URL}/api/incidents").json()
             rip_incs = [i for i in res if i["category"] == "Control Plane - RIP" and i["status"] == "open"]
             self.assertGreaterEqual(len(rip_incs), 1)
-            inc = rip_incs[0]
+            r1_incs = [i for i in rip_incs if i["root_cause_device"] == "R1"]
+            self.assertGreaterEqual(len(r1_incs), 1)
+            inc = r1_incs[0]
             self.assertEqual(inc["root_cause_device"], "R1")
         finally:
             clear_scenario("rip-missing-network")

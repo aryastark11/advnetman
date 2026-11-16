@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from typing import Dict, List, Any, Optional
@@ -164,18 +165,38 @@ Respond ONLY with a valid JSON object matching this schema:
         rollback_cmds = []
         risk = "low"
 
+        # Dynamically extract interface name from title or evidence items
+        intf_match = re.search(r'(Ethernet[\d\./]+|Management[\d\./]+)', title)
+        if not intf_match:
+            for ev in evidence:
+                raw_ev = ev.get("raw_data", {})
+                if isinstance(raw_ev, dict):
+                    if raw_ev.get("interface"):
+                        intf_match = re.search(r'(Ethernet[\d\./]+|Management[\d\./]+)', str(raw_ev["interface"]))
+                        if intf_match:
+                            break
+                    if raw_ev.get("name"):
+                        intf_match = re.search(r'(Ethernet[\d\./]+|Management[\d\./]+)', str(raw_ev["name"]))
+                        if intf_match:
+                            break
+                ev_str = ev.get("summary", "") + " " + json.dumps(raw_ev)
+                intf_match = re.search(r'(Ethernet[\d\./]+|Management[\d\./]+)', ev_str)
+                if intf_match:
+                    break
+        extracted_intf = intf_match.group(1) if intf_match else "Ethernet1"
+
         if "BGP" in cat or "bgp" in title.lower():
             cause = f"BGP peering failure on ASBR {dev}. Adjacency collapsed with external peer."
             commands = ["router bgp 65005" if dev == "R5" else "router bgp 65001", "no neighbor 172.16.35.1 shutdown", "no neighbor 172.16.45.1 shutdown"]
             rollback_cmds = ["router bgp 65005" if dev == "R5" else "router bgp 65001", "neighbor 172.16.35.1 shutdown"]
         elif "OSPF" in cat or "ospf" in title.lower():
-            cause = f"OSPF neighbor adjacency degraded on {dev} due to interface state or area configuration."
-            commands = ["interface Ethernet1", "ip ospf hello-interval 1", "ip ospf dead-interval 3", "no shutdown"]
-            rollback_cmds = ["interface Ethernet1", "shutdown"]
+            cause = f"OSPF neighbor adjacency degraded on {dev} {extracted_intf} due to interface state or area configuration."
+            commands = [f"interface {extracted_intf}", "ip ospf hello-interval 1", "ip ospf dead-interval 3", "no shutdown"]
+            rollback_cmds = [f"interface {extracted_intf}", "shutdown"]
         elif "Interface" in cat or "interface" in title.lower():
-            cause = f"Physical / administrative interface state down on {dev} interrupting layer 2/3 transport."
-            commands = ["interface Ethernet1", "no shutdown"]
-            rollback_cmds = ["interface Ethernet1", "shutdown"]
+            cause = f"Physical / administrative interface state down on {dev} interface {extracted_intf} interrupting layer 2/3 transport."
+            commands = [f"interface {extracted_intf}", "no shutdown"]
+            rollback_cmds = [f"interface {extracted_intf}", "shutdown"]
         elif "RIP" in cat or "rip" in title.lower():
             cause = f"RIPv2 routing advertisement missing for campus subnets on {dev}."
             commands = ["router rip", "network 10.10.0.0/16", "no shutdown"]

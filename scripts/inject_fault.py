@@ -43,7 +43,7 @@ SCENARIOS = {
     "rip-missing-network": {
         "title": "RIPv2 Missing Network Advertisement (R1 Network 10.10.0.0/16 Removed)",
         "device": "R1",
-        "inject_cmds": ["router rip", "no network 10.10.0.0/16", "no network 10.10.10.0/24"],
+        "inject_cmds": ["router rip", "no network 10.10.0.0/16", "no network 10.10.10.0/24", "no network 10.10.20.0/24"],
         "clear_cmds": ["router rip", "network 10.10.0.0/16"],
         "category": "Control Plane - RIP"
     },

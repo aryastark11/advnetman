@@ -77,18 +77,19 @@ def execute_remediation(incident_id: str, commands: Optional[List[str]] = None,
         return {"success": False, "error": f"eAPI apply failed: {apply_output}"}
 
     # Step 3: Allow network convergence & re-verify
-    time.sleep(2.0)
     post_snapshot = get_running_config(target_dev)
 
-    # Re-run probes and rule checks
-    probe_results = run_all_probes()
-    violations = evaluate_all_rules()
-
-    # Check if target device still has violations
-    remaining_dev_violations = [v for v in violations if v.get("device") == target_dev]
-
-    # Deliberate bad fix test detection: if commands contain "invalid" or "error_trigger" or if probes failed
-    is_verified = (len(remaining_dev_violations) == 0 and probe_results.get("failed_count", 0) == 0)
+    # Allow routing protocols (BGP / OSPF / RIP) time to re-converge with retry verification
+    is_verified = False
+    probe_results = {}
+    for attempt in range(3):
+        time.sleep(2.0)
+        probe_results = run_all_probes()
+        violations = evaluate_all_rules()
+        remaining_dev_violations = [v for v in violations if v.get("device") == target_dev]
+        if len(remaining_dev_violations) == 0 and probe_results.get("failed_count", 0) == 0:
+            is_verified = True
+            break
 
     # If verification PASSED
     if is_verified:

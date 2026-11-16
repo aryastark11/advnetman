@@ -5,7 +5,8 @@ from netsleuth.collectors.eapi_poller import (
     get_ospf_neighbors,
     get_bgp_peers,
     get_rip_routes,
-    get_varp_state
+    get_varp_state,
+    run_commands
 )
 from netsleuth.storage.db import get_config_drift, get_recent_probes
 
@@ -105,8 +106,25 @@ def check_bgp_rules() -> List[Dict[str, Any]]:
 
 def check_rip_rules() -> List[Dict[str, Any]]:
     violations = []
-    # R1 and R2 should have RIP routes from the access switches
+    # R1 and R2 should have RIP routes and network statements for campus VLAN subnets
     for dev in ["R1", "R2"]:
+        # 1. Check running config for RIP network statements
+        rip_cfg = run_commands(dev, ["show running-config section router rip"], encoding="text")
+        rip_text = rip_cfg[0].get("output", "") if rip_cfg else ""
+        if "network 10.10." not in rip_text and "network 10.0.0.0" not in rip_text:
+            violations.append({
+                "rule": "rip_missing_network",
+                "device": dev,
+                "severity": "high",
+                "category": "Control Plane - RIP",
+                "title": f"RIPv2 Network Advertisement Missing on {dev}",
+                "detail": f"Router {dev} is missing network advertisement statement (10.10.0.0/16) in RIP configuration.",
+                "evidence_type": "rip_config",
+                "raw_data": {"device": dev, "config": rip_text}
+            })
+            continue
+
+        # 2. Check route database
         routes = get_rip_routes(dev)
         has_subnets = any("10.10." in r.get("network", "") for r in routes)
         if not has_subnets:
@@ -140,6 +158,9 @@ def check_interface_rules() -> List[Dict[str, Any]]:
             # Check for explicitly down interfaces that are configured
             if link_st in ["down", "notconnect", "disabled"]:
                 # Check if it was intentionally shut or down
+                st_data = dict(st)
+                st_data["interface"] = intf_name
+                st_data["name"] = intf_name
                 violations.append({
                     "rule": "interface_down",
                     "device": dev,
@@ -148,7 +169,7 @@ def check_interface_rules() -> List[Dict[str, Any]]:
                     "title": f"Interface {intf_name} Down on {dev}",
                     "detail": f"Interface {intf_name} on {dev} line protocol is '{link_st}'.",
                     "evidence_type": "interface_state",
-                    "raw_data": st
+                    "raw_data": st_data
                 })
 
         for intf_name, err in errors.items():
@@ -156,6 +177,9 @@ def check_interface_rules() -> List[Dict[str, Any]]:
             out_errs = err.get("outErrors", 0)
             fcs_errs = err.get("fcsErrors", 0)
             if in_errs > 50 or out_errs > 50 or fcs_errs > 10:
+                err_data = dict(err)
+                err_data["interface"] = intf_name
+                err_data["name"] = intf_name
                 violations.append({
                     "rule": "interface_errors_rising",
                     "device": dev,
@@ -164,7 +188,7 @@ def check_interface_rules() -> List[Dict[str, Any]]:
                     "title": f"High Interface Error Counter on {dev} {intf_name}",
                     "detail": f"Interface {intf_name} reports inErrors={in_errs}, outErrors={out_errs}, fcsErrors={fcs_errs}.",
                     "evidence_type": "interface_errors",
-                    "raw_data": err
+                    "raw_data": err_data
                 })
     return violations
 

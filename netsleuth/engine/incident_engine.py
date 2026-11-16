@@ -1,4 +1,5 @@
 import time
+import re
 import logging
 from typing import Dict, List, Any, Optional
 from netsleuth.storage.db import (
@@ -39,11 +40,17 @@ class IncidentEngine:
             rollback_cmds = [f"router bgp {asn}", f"neighbor {peer_ip} shutdown"]
         elif rule == "ospf_neighbor_not_full":
             intf = raw.get("interface", "")
+            if not intf:
+                m = re.search(r'(Ethernet[\d\./]+|Management[\d\./]+)', violation.get("title", "") + " " + violation.get("detail", ""))
+                intf = m.group(1) if m else "Ethernet1"
             cause = f"OSPF Area mismatch or hello/dead interval timer mismatch on {dev} {intf}."
             commands = [f"interface {intf}", "ip ospf hello-interval 1", "ip ospf dead-interval 3", "no shutdown"]
             rollback_cmds = [f"interface {intf}", "shutdown"]
         elif rule == "interface_down":
-            intf = raw.get("name") or raw.get("interface", "") or "Ethernet1"
+            intf = raw.get("name") or raw.get("interface", "")
+            if not intf:
+                m = re.search(r'(Ethernet[\d\./]+|Management[\d\./]+)', violation.get("title", "") + " " + violation.get("detail", ""))
+                intf = m.group(1) if m else "Ethernet1"
             cause = f"Physical / administrative link failure on {dev} interface {intf}."
             commands = [f"interface {intf}", "no shutdown"]
             rollback_cmds = [f"interface {intf}", "shutdown"]
