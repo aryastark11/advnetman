@@ -189,6 +189,22 @@ class IncidentEngine:
                     )
                 del self._active_incident_map[k]
 
+        # Reconcile any persistent open DB incidents whose root causes are now resolved
+        all_open_incs = get_incidents("open")
+        for inc in all_open_incs:
+            dev = inc.get("root_cause_device", "")
+            cat = inc.get("category", "")
+            key = f"{dev}:{cat}"
+            if key not in seen_keys:
+                inc["status"] = "resolved"
+                save_incident(inc)
+                add_timeline_event(
+                    incident_id=inc["id"],
+                    event_type="recovery",
+                    description=f"Incident auto-resolved: network restored to nominal baseline.",
+                    details={"resolved_key": key}
+                )
+
         # Update node health in storage
         for d, h in node_health_state.items():
             update_node_health(d, h)

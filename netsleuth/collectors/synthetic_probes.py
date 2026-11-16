@@ -117,8 +117,8 @@ def probe_single_target(host_name: str, target_name: str, target_ip: str, probe_
             "rtt_ms": rtt
         }
     elif probe_type == "http":
-        curl_cmd = f"curl -6 -s -o /dev/null -w '%{{http_code}}' -m 2 http://[{target_ip}]" if is_ipv6 else f"curl -s -o /dev/null -w '%{{http_code}}' -m 2 http://{target_ip}"
-        res = exec_in_container(container, curl_cmd, timeout=3)
+        curl_cmd = f"curl -g -6 -s -o /dev/null -w '%{{http_code}}' -m 3 http://[{target_ip}]/" if is_ipv6 else f"curl -s -o /dev/null -w '%{{http_code}}' -m 2 http://{target_ip}"
+        res = exec_in_container(container, curl_cmd, timeout=4)
         http_code = int(res["stdout"]) if res["stdout"].isdigit() else 0
         success = (http_code == 200)
         record_probe(
